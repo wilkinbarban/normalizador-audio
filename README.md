@@ -94,7 +94,8 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force; irm https://r
 
 ### Dependencia FFmpeg
 
-El proyecto requiere FFmpeg disponible en PATH para análisis y normalización. Si no está instalado, la app mostrará advertencias y no podrá procesar audio.
+El proyecto requiere FFmpeg disponible en PATH para análisis y normalización.
+Si FFmpeg (o Python) no está instalado, `install_dependencies.bat` intenta instalarlo automáticamente y dejar el entorno listo para ejecutar la app.
 
 ## English
 
@@ -160,7 +161,8 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force; irm https://r
 
 ### FFmpeg dependency
 
-The project requires FFmpeg in PATH for analysis and normalization. Without FFmpeg, processing will not run.
+The project requires FFmpeg in PATH for analysis and normalization.
+If FFmpeg (or Python) is missing, `install_dependencies.bat` attempts to install it automatically and prepare the environment to run the app.
 
 ## Português (Brasil)
 
@@ -226,7 +228,8 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force; irm https://r
 
 ### Dependência FFmpeg
 
-O projeto exige FFmpeg no PATH para análise e normalização. Sem FFmpeg, o processamento não é executado.
+O projeto exige FFmpeg no PATH para análise e normalização.
+Se FFmpeg (ou Python) estiver ausente, `install_dependencies.bat` tenta instalar automaticamente e preparar o ambiente para executar o aplicativo.
 
 ## Project structure
 

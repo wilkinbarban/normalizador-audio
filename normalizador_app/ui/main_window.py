@@ -966,11 +966,12 @@ class MainWindow(QMainWindow):
                 import webbrowser
                 webbrowser.open(release_info["url"])
         else:
-            # Already up to date
+            # Already up to date — release_info is present, not a network error
+            latest_version = release_info["tag_name"].lstrip("v")
             QMessageBox.information(
                 self,
                 self.t("version_title"),
-                self.t("update_up_to_date", version=VERSION),
+                self.t("update_up_to_date", version=latest_version),
             )
 
     # ------------------------------------------------------------------

@@ -63,7 +63,9 @@ class UpdateService:
 
         Returns:
             Tuple of (update_available, release_info).
-            release_info contains: tag_name, name, url.
+            - (True,  dict)  → update available
+            - (False, dict)  → already up to date
+            - (False, None)  → network/API error
         """
         release_info = UpdateService.get_latest_version()
         if not release_info:
@@ -72,4 +74,5 @@ class UpdateService:
         if UpdateService.compare_versions(current_version, release_info["tag_name"]):
             return True, release_info
 
-        return False, None
+        # Up to date: return the release info so the caller knows it's not an error
+        return False, release_info

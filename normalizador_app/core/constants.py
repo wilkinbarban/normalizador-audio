@@ -1,8 +1,16 @@
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 CONFIG_FILE = "normalizador_config.ini"
 PROFILE_FILE = "audio_profile.json"
 _PROFILE_FILE_LEGACY = "audio_profile.pkl"
 SUPPORTED_FORMATS = (".mp4", ".mkv", ".mov", ".avi", ".flv", ".webm")
+
+# Predefined normalization presets (LUFS, LRA, TP)
+AUDIO_PRESETS = {
+    "youtube":  {"lufs": -14, "lra": 7,  "tp": -1.5},
+    "netflix":  {"lufs": -27, "lra": 18, "tp": -2.0},
+    "spotify":  {"lufs": -14, "lra": 9,  "tp": -1.0},
+    "podcast":  {"lufs": -16, "lra": 8,  "tp": -1.5},
+}
 
 DARK_THEME = {
     "bg": "#0d1117",

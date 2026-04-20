@@ -8,6 +8,14 @@ Documento de planificación para futuras versiones y mejoras del proyecto **Norm
 
 ### 🎯 Prioridad: ALTA
 
+### ✅ Estado actual (2026-04-20)
+
+- Implementado: GPU acceleration con detección automática y fallback a CPU.
+- Implementado: procesamiento paralelo con límite configurable de workers.
+- Implementado: presets predefinidos (YouTube, Netflix, Spotify, Podcast + Custom).
+- Implementado: waveform visual en pestaña Perfil.
+- Pendiente en v1.1.x: caché de análisis por hash, selección visual de segmentos y espectro LUFS en tiempo real.
+
 #### 2.1 Mejoras de Rendimiento
 - **GPU Acceleration**: Integración con FFmpeg GPU (NVIDIA NVENC, AMD VCE, Intel QuickSync)
   - Reducir tiempo de procesamiento en 50-70%
@@ -27,7 +35,7 @@ Documento de planificación para futuras versiones y mejoras del proyecto **Norm
 
 #### 2.2 Características de Interfaz
 - **Waveform visual**:
-  - Previsualización de onda antes/después del procesamiento
+  - Previsualización de onda del video de referencia en pestaña Perfil
   - Selección visual de segmentos para normalizar (trim points)
   - Espectro LUFS real-time
 
@@ -37,6 +45,8 @@ Documento de planificación para futuras versiones y mejoras del proyecto **Norm
   - Spotify (LUFS -14, TP -1)
   - Podcast (LUFS -16, TP -1)
   - Custom: guardar/cargar propios presets
+
+> Nota: los bloques listados como “Implementado” en el estado actual ya están en producción en v1.1.0.
 
 - **Interfaz de arrastrar-soltar mejorada**:
   - Arrastrar archivos directamente a tab de normalizar

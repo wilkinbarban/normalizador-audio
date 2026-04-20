@@ -10,6 +10,30 @@
 
 Todos los cambios notables en este proyecto serán documentados en este archivo.
 
+### [1.1.0] - 2026-04-20
+
+#### ✨ Nuevas Funcionalidades
+
+**Rendimiento y procesamiento**
+- **Aceleración GPU inteligente (FFmpeg)**: detección automática de `hwaccel` compatible y activación opcional desde la interfaz.
+- **Fallback automático a CPU**: si FFmpeg falla con `-hwaccel`, el procesamiento reintenta en CPU sin interrumpir el flujo.
+- **Procesamiento paralelo mejorado**: ejecución concurrente de múltiples videos con límite configurable de workers.
+- **Cancelación robusta**: al cancelar, se terminan todos los procesos FFmpeg activos de forma segura.
+
+**Interfaz de usuario**
+- **Presets predefinidos**: YouTube, Netflix, Spotify y Podcast, con modo `Custom`.
+- **Selector de concurrencia**: nuevo control en UI para elegir cantidad de procesos simultáneos.
+- **Waveform visual en Perfil**: previsualización de forma de onda generada con FFmpeg al seleccionar video de referencia.
+
+**Infraestructura interna**
+- Nuevos módulos: `gpu_service`, `waveform_service` y `waveform_worker`.
+- Limpieza de caché ampliada para incluir waveform cache temporal.
+
+#### 🛠️ Compatibilidad
+
+- Sin cambios incompatibles en flujo principal para usuarios de v1.0.0.
+- Configuración migrada automáticamente con nuevas claves (`gpu_accel`, `parallel_jobs`).
+
 ### [1.0.0] - 2026-04-20
 
 #### ✨ Características Principales
@@ -67,11 +91,8 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 Primera versión de lanzamiento. Todas las características core están implementadas y listas para producción.
 
 **Próximas versiones considerarán:**
-- Aceleración GPU para FFmpeg
-- Waveform visual antes/después
 - Soporte para formatos de audio directo (.mp3, .wav, .flac)
 - Historial de procesamiento con rollback
-- Presets predefinidos (YouTube, Netflix, Spotify, Podcast)
 - Interfaz de línea de comandos (CLI)
 
 ---
@@ -79,6 +100,30 @@ Primera versión de lanzamiento. Todas las características core están implemen
 ## English
 
 All notable changes to this project will be documented in this file.
+
+### [1.1.0] - 2026-04-20
+
+#### ✨ New Features
+
+**Performance and processing**
+- **Smart GPU acceleration (FFmpeg)**: automatic detection of supported `hwaccel` method with optional UI toggle.
+- **Automatic CPU fallback**: if FFmpeg fails with `-hwaccel`, processing retries on CPU without breaking the workflow.
+- **Improved parallel processing**: concurrent processing for multiple videos with configurable worker limit.
+- **Robust cancellation**: cancel now terminates all active FFmpeg processes safely.
+
+**User interface**
+- **Built-in presets**: YouTube, Netflix, Spotify and Podcast, plus `Custom` mode.
+- **Concurrency selector**: new UI control to choose simultaneous processing jobs.
+- **Visual waveform in Profile tab**: waveform preview generated with FFmpeg when selecting a reference video.
+
+**Internal infrastructure**
+- New modules: `gpu_service`, `waveform_service`, and `waveform_worker`.
+- Cache cleanup now also handles temporary waveform cache.
+
+#### 🛠️ Compatibility
+
+- No breaking changes for users upgrading from v1.0.0.
+- Configuration auto-migration with new keys (`gpu_accel`, `parallel_jobs`).
 
 ### [1.0.0] - 2026-04-20
 
@@ -137,11 +182,8 @@ All notable changes to this project will be documented in this file.
 First release version. All core features are implemented and production-ready.
 
 **Future versions may include:**
-- GPU acceleration for FFmpeg
-- Visual waveform before/after
 - Direct audio format support (.mp3, .wav, .flac)
 - Processing history with rollback
-- Built-in presets (YouTube, Netflix, Spotify, Podcast)
 - Command-line interface (CLI)
 
 ---
@@ -149,6 +191,30 @@ First release version. All core features are implemented and production-ready.
 ## Português (Brasil)
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
+
+### [1.1.0] - 2026-04-20
+
+#### ✨ Novas Funcionalidades
+
+**Desempenho e processamento**
+- **Aceleração GPU inteligente (FFmpeg)**: detecção automática de método `hwaccel` compatível com ativação opcional na interface.
+- **Fallback automático para CPU**: se o FFmpeg falhar com `-hwaccel`, o processamento tenta novamente em CPU sem quebrar o fluxo.
+- **Processamento paralelo melhorado**: execução concorrente de múltiplos vídeos com limite configurável de workers.
+- **Cancelamento robusto**: ao cancelar, todos os processos FFmpeg ativos são encerrados com segurança.
+
+**Interface do usuário**
+- **Presets integrados**: YouTube, Netflix, Spotify e Podcast, além do modo `Custom`.
+- **Seletor de concorrência**: novo controle na UI para definir quantidade de processos simultâneos.
+- **Waveform visual na aba Perfil**: pré-visualização da forma de onda gerada com FFmpeg ao selecionar vídeo de referência.
+
+**Infraestrutura interna**
+- Novos módulos: `gpu_service`, `waveform_service` e `waveform_worker`.
+- Limpeza de cache ampliada para incluir cache temporário de waveform.
+
+#### 🛠️ Compatibilidade
+
+- Sem mudanças incompatíveis para usuários que atualizam da v1.0.0.
+- Migração automática de configuração com novas chaves (`gpu_accel`, `parallel_jobs`).
 
 ### [1.0.0] - 2026-04-20
 
@@ -207,11 +273,8 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 Primeira versão de lançamento. Todas as funcionalidades principais estão implementadas e prontas para produção.
 
 **Versões futuras poderão incluir:**
-- Aceleração GPU para FFmpeg
-- Forma de onda visual antes/depois
 - Suporte a formatos de áudio direto (.mp3, .wav, .flac)
 - Histórico de processamento com rollback
-- Presets integrados (YouTube, Netflix, Spotify, Podcast)
 - Interface de linha de comando (CLI)
 
 ---

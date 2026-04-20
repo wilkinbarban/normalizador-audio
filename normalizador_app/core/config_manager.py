@@ -28,9 +28,16 @@ class ConfigManager:
                 "tp": "-1.5",
                 "theme": "dark",
                 "language": "es",
+                "gpu_accel": "false",
+                "parallel_jobs": "2",
             }
         elif "language" not in self.config["settings"]:
             self.config["settings"]["language"] = "es"
+
+        if "gpu_accel" not in self.config["settings"]:
+            self.config["settings"]["gpu_accel"] = "false"
+        if "parallel_jobs" not in self.config["settings"]:
+            self.config["settings"]["parallel_jobs"] = "2"
         self.load_audio_profile()
 
     def save(self):

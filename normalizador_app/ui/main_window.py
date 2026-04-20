@@ -9,6 +9,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QActionGroup, QIcon, QPixmap
 from PyQt6.QtWidgets import (
     QApplication,
+    QCheckBox,
     QDialog,
     QFileDialog,
     QFrame,
@@ -20,6 +21,7 @@ from PyQt6.QtWidgets import (
     QProgressBar,
     QPushButton,
     QSlider,
+    QSpinBox,
     QTabWidget,
     QTextEdit,
     QTreeWidget,
@@ -32,6 +34,7 @@ from PyQt6.QtWidgets import (
 
 from normalizador_app.core.config_manager import ConfigManager
 from normalizador_app.core.constants import (
+    AUDIO_PRESETS,
     CONFIG_FILE,
     PROFILE_FILE,
     _PROFILE_FILE_LEGACY,
@@ -41,6 +44,7 @@ from normalizador_app.core.constants import (
 from normalizador_app.core.constants import DARK_THEME, LIGHT_THEME
 from normalizador_app.core.i10n import SUPPORTED_LANGUAGES, t
 from normalizador_app.services.dependency_service import DependencyService
+from normalizador_app.services.gpu_service import detect_hwaccels, get_best_hwaccel
 from normalizador_app.services.update_service import UpdateService
 from normalizador_app.ui.controllers.normalizer_controller import NormalizerController
 from normalizador_app.ui.controllers.profile_controller import ProfileController
@@ -77,6 +81,20 @@ class MainWindow(QMainWindow):
         self.before_after_data = {}
         self.selected_video_path = None
         self.process_worker = None
+
+        # GPU acceleration — detect once at startup
+        _available_hwaccels = detect_hwaccels()
+        self.gpu_hwaccel: str | None = get_best_hwaccel(_available_hwaccels)
+        self.gpu_accel_enabled: bool = (
+            self.config_manager.config["settings"].get("gpu_accel", "false") == "true"
+            and self.gpu_hwaccel is not None
+        )
+        self.max_parallel_jobs = min(8, max(1, os.cpu_count() or 1))
+        try:
+            saved_parallel_jobs = int(self.config_manager.config["settings"].get("parallel_jobs", "2"))
+        except ValueError:
+            saved_parallel_jobs = 2
+        self.parallel_jobs = max(1, min(self.max_parallel_jobs, saved_parallel_jobs))
 
         if not self._verify_dependencies():
             raise RuntimeError(self.t("deps_missing_title"))
@@ -338,6 +356,26 @@ class MainWindow(QMainWindow):
         settings_layout.setContentsMargins(8, 6, 8, 6)
         settings_layout.setSpacing(4)
 
+        # Presets row
+        row_presets = QHBoxLayout()
+        self.lbl_presets = QLabel("Preset:")
+        row_presets.addWidget(self.lbl_presets)
+        self.preset_buttons: dict[str, QPushButton] = {}
+        for preset_key in ("youtube", "netflix", "spotify", "podcast"):
+            btn = QPushButton(preset_key.capitalize())
+            btn.setObjectName("presetBtn")
+            btn.setCheckable(True)
+            row_presets.addWidget(btn)
+            self.preset_buttons[preset_key] = btn
+        self.btn_preset_custom = QPushButton("Custom")
+        self.btn_preset_custom.setObjectName("presetBtn")
+        self.btn_preset_custom.setCheckable(True)
+        self.btn_preset_custom.setChecked(True)
+        row_presets.addWidget(self.btn_preset_custom)
+        self.preset_buttons["custom"] = self.btn_preset_custom
+        row_presets.addStretch()
+        settings_layout.addLayout(row_presets)
+
         row_lufs = QHBoxLayout()
         row_lufs.addWidget(QLabel("LUFS"))
         self.slider_volume = QSlider(Qt.Orientation.Horizontal)
@@ -372,6 +410,36 @@ class MainWindow(QMainWindow):
         row_lra_tp.addWidget(self.slider_tp)
         row_lra_tp.addWidget(self.lbl_tp_value)
         settings_layout.addLayout(row_lra_tp)
+
+        # GPU acceleration row
+        row_gpu = QHBoxLayout()
+        self.lbl_gpu = QLabel("GPU accel:")
+        row_gpu.addWidget(self.lbl_gpu)
+        self.chk_gpu_accel = QCheckBox()
+        self.chk_gpu_accel.setChecked(self.gpu_accel_enabled)
+        self.chk_gpu_accel.setEnabled(self.gpu_hwaccel is not None)
+        row_gpu.addWidget(self.chk_gpu_accel)
+        gpu_info = self.gpu_hwaccel if self.gpu_hwaccel else "—"
+        self.lbl_gpu_info = QLabel(gpu_info)
+        self.lbl_gpu_info.setObjectName("muted")
+        row_gpu.addWidget(self.lbl_gpu_info)
+        row_gpu.addStretch()
+        settings_layout.addLayout(row_gpu)
+
+        # Parallel processing row
+        row_parallel = QHBoxLayout()
+        self.lbl_parallel = QLabel("Paralelo:")
+        row_parallel.addWidget(self.lbl_parallel)
+        self.spin_parallel_jobs = QSpinBox()
+        self.spin_parallel_jobs.setRange(1, self.max_parallel_jobs)
+        self.spin_parallel_jobs.setValue(self.parallel_jobs)
+        row_parallel.addWidget(self.spin_parallel_jobs)
+        self.lbl_parallel_hint = QLabel(f"{self.parallel_jobs} procesos simultaneos")
+        self.lbl_parallel_hint.setObjectName("muted")
+        row_parallel.addWidget(self.lbl_parallel_hint)
+        row_parallel.addStretch()
+        settings_layout.addLayout(row_parallel)
+
         layout.addWidget(settings_card)
 
         self.lbl_videos_title = QLabel("Videos")
@@ -452,6 +520,15 @@ class MainWindow(QMainWindow):
         self.lbl_selected_video = QLabel("Sin archivo")
         self.lbl_selected_video.setObjectName("accent")
         layout.addWidget(self.lbl_selected_video)
+
+        self.group_waveform = QGroupBox("Waveform")
+        waveform_layout = QVBoxLayout(self.group_waveform)
+        self.lbl_waveform = QLabel("Sin previsualizacion")
+        self.lbl_waveform.setObjectName("muted")
+        self.lbl_waveform.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.lbl_waveform.setMinimumHeight(150)
+        waveform_layout.addWidget(self.lbl_waveform)
+        layout.addWidget(self.group_waveform)
 
         row_buttons = QHBoxLayout()
         self.btn_pick_video = QPushButton("Elegir…")
@@ -552,6 +629,24 @@ class MainWindow(QMainWindow):
         self.slider_lra.valueChanged.connect(lambda v: self.lbl_lra_value.setText(f"({v})"))
         self.slider_tp.valueChanged.connect(lambda v: self.lbl_tp_value.setText(f"({v / 2:.1f})"))
 
+        # Uncheck preset buttons when user moves sliders manually
+        def _on_manual_slider():
+            for btn in self.preset_buttons.values():
+                btn.setChecked(False)
+            self.btn_preset_custom.setChecked(True)
+
+        self.slider_volume.sliderMoved.connect(lambda _: _on_manual_slider())
+        self.slider_lra.sliderMoved.connect(lambda _: _on_manual_slider())
+        self.slider_tp.sliderMoved.connect(lambda _: _on_manual_slider())
+
+        # Preset buttons
+        for preset_key, btn in self.preset_buttons.items():
+            btn.clicked.connect(lambda _checked, k=preset_key: self._apply_preset(k))
+
+        # GPU accel toggle
+        self.chk_gpu_accel.toggled.connect(self._on_gpu_toggled)
+        self.spin_parallel_jobs.valueChanged.connect(self._on_parallel_jobs_changed)
+
         # Profile tab
         self.btn_pick_video.clicked.connect(self.profile_ctrl.select_video_reference)
         self.btn_analyze.clicked.connect(self.profile_ctrl.run_analyzer)
@@ -580,6 +675,40 @@ class MainWindow(QMainWindow):
         self.config_manager.config["settings"]["language"] = language_code
         self.config_manager.save()
         self._retranslate_ui()
+
+    def _on_gpu_toggled(self, checked: bool):
+        self.gpu_accel_enabled = checked
+        self.config_manager.config["settings"]["gpu_accel"] = "true" if checked else "false"
+        self.config_manager.save()
+
+    def _on_parallel_jobs_changed(self, value: int):
+        self.parallel_jobs = value
+        self.config_manager.config["settings"]["parallel_jobs"] = str(value)
+        self.config_manager.save()
+        self.lbl_parallel_hint.setText(self.t("parallel_hint", workers=value))
+
+    def _apply_preset(self, key: str):
+        """Apply a named preset to the LUFS/LRA/TP sliders."""
+        # Uncheck all, check the clicked one
+        for k, btn in self.preset_buttons.items():
+            btn.setChecked(k == key)
+
+        if key == "custom":
+            # Restore last saved values
+            self.slider_volume.setValue(int(self.config_manager.config["settings"].get("volume", "-14")))
+            self.slider_lra.setValue(int(self.config_manager.config["settings"].get("lra", "11")))
+            tp_val = float(self.config_manager.config["settings"].get("tp", "-1.5"))
+            self.slider_tp.setValue(int(tp_val * 2))
+            return
+
+        preset = AUDIO_PRESETS[key]
+        self.slider_volume.setValue(preset["lufs"])
+        self.slider_lra.setValue(preset["lra"])
+        self.slider_tp.setValue(int(preset["tp"] * 2))
+
+        self.lbl_status.setText(
+            self.t("preset_applied", name=key.capitalize(), lufs=preset["lufs"], lra=preset["lra"], tp=preset["tp"])
+        )
 
     def _retranslate_ui(self):
         self.setWindowTitle(self.t("app_title"))
@@ -615,7 +744,16 @@ class MainWindow(QMainWindow):
         self.btn_output.setText(self.t("btn_output"))
         self.btn_clear_output.setText(self.t("btn_clear_output"))
         self.btn_clear_list.setText(self.t("btn_clear_list"))
+        self.lbl_presets.setText(self.t("preset_label"))
+        self.btn_preset_custom.setText(self.t("preset_custom"))
         self.btn_apply_profile_quick.setText(self.t("tab_profile"))
+        self.lbl_gpu.setText(self.t("gpu_label"))
+        if self.gpu_hwaccel:
+            self.lbl_gpu_info.setText(self.t("gpu_detected", method=self.gpu_hwaccel.upper()))
+        else:
+            self.lbl_gpu_info.setText(self.t("gpu_none"))
+        self.lbl_parallel.setText(self.t("parallel_label"))
+        self.lbl_parallel_hint.setText(self.t("parallel_hint", workers=self.spin_parallel_jobs.value()))
         self.btn_select_all.setText(self.t("btn_select_all"))
         self.btn_select_none.setText(self.t("btn_select_none"))
         self.btn_start.setText(self.t("btn_start"))
@@ -643,8 +781,10 @@ class MainWindow(QMainWindow):
         self.lbl_profile_title.setText(self.t("profile_title"))
         self.lbl_profile_subtitle.setText(self.t("profile_subtitle"))
         self.group_output.setTitle(self.t("group_output"))
+        self.group_waveform.setTitle(self.t("waveform_group"))
         if not self.selected_video_path:
             self.lbl_selected_video.setText(self.t("profile_no_file"))
+            self.lbl_waveform.setText(self.t("waveform_empty"))
 
         self.btn_export_csv.setText(self.t("btn_export_csv"))
         self.btn_export_txt.setText(self.t("btn_export_txt"))
@@ -704,10 +844,20 @@ class MainWindow(QMainWindow):
                         pass
 
         qr_cache_dir = Path(tempfile.gettempdir()) / "normalizador_audio_qr_cache"
+        waveform_cache_dir = Path(tempfile.gettempdir()) / "normalizador_audio_waveform_cache"
         max_age_seconds = 7 * 24 * 60 * 60
         now = time.time()
         if qr_cache_dir.exists():
             for file in qr_cache_dir.glob("*.png"):
+                try:
+                    if now - file.stat().st_mtime >= max_age_seconds:
+                        file.unlink()
+                        deleted += 1
+                except Exception:
+                    pass
+
+        if waveform_cache_dir.exists():
+            for file in waveform_cache_dir.glob("*.png"):
                 try:
                     if now - file.stat().st_mtime >= max_age_seconds:
                         file.unlink()

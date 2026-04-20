@@ -215,4 +215,23 @@ QMenu::right-arrow {{
     width: 8px;
     height: 8px;
 }}
+QPushButton#presetBtn {{
+    background-color: {palette['frame']};
+    color: {palette['text_sec']};
+    border: 1px solid {palette['border']};
+    border-radius: 10px;
+    padding: 2px 10px;
+    font-size: 8pt;
+}}
+QPushButton#presetBtn:hover {{
+    background-color: {palette['accent']};
+    color: {palette['tab_fg']};
+    border-color: {palette['accent']};
+}}
+QPushButton#presetBtn:checked {{
+    background-color: {palette['accent']};
+    color: {palette['tab_fg']};
+    border-color: {palette['accent']};
+    font-weight: bold;
+}}
 """

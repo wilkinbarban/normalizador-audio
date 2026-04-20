@@ -40,7 +40,11 @@ Aplicación de escritorio para Windows desarrollada con Python y PyQt6 para norm
 
 - Normalización LUFS basada en FFmpeg loudnorm.
 - Procesamiento por lotes de videos.
+- Procesamiento paralelo configurable (workers simultáneos).
+- Aceleración GPU opcional con detección automática y fallback a CPU.
 - Perfil de referencia: analiza un video y aplica sus parámetros al lote.
+- Waveform visual en la pestaña Perfil para previsualización de audio.
+- Presets predefinidos: YouTube, Netflix, Spotify y Podcast (modo Custom incluido).
 - Reporte antes/después (I, LRA, TP) con exportación CSV/TXT.
 - Interfaz multilenguaje: Español, English, Português.
 - Tema claro/oscuro y mensajes de estado en vivo.
@@ -102,7 +106,11 @@ Windows desktop application built with Python and PyQt6 to normalize audio acros
 
 - LUFS normalization powered by FFmpeg loudnorm.
 - Batch video processing workflow.
+- Configurable parallel processing (simultaneous workers).
+- Optional GPU acceleration with automatic detection and CPU fallback.
 - Reference profile: analyze one video and apply its parameters globally.
+- Visual waveform preview in Profile tab.
+- Built-in presets: YouTube, Netflix, Spotify and Podcast (with Custom mode).
 - Before/after report (I, LRA, TP) with CSV/TXT export.
 - Multilingual interface: Español, English, Português.
 - Light/dark theme and live status messaging.
@@ -164,7 +172,11 @@ Aplicativo desktop para Windows, desenvolvido com Python e PyQt6, para normaliza
 
 - Normalização LUFS com FFmpeg loudnorm.
 - Processamento em lote de vídeos.
+- Processamento paralelo configurável (workers simultâneos).
+- Aceleração GPU opcional com detecção automática e fallback para CPU.
 - Perfil de referência: analisa um vídeo e aplica os parâmetros ao lote.
+- Waveform visual na aba Perfil para pré-visualização de áudio.
+- Presets integrados: YouTube, Netflix, Spotify e Podcast (modo Custom incluído).
 - Relatório antes/depois (I, LRA, TP) com exportação CSV/TXT.
 - Interface multilíngue: Español, English, Português.
 - Tema claro/escuro e mensagens de status em tempo real.

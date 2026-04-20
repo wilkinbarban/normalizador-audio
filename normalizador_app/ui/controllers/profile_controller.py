@@ -8,15 +8,19 @@ Owns all logic for the Perfil tab:
 """
 import os
 
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import QFileDialog, QMessageBox
 
 from normalizador_app.workers.analyzer_worker import AnalyzerWorker
+from normalizador_app.workers.waveform_worker import WaveformWorker
 
 
 class ProfileController:
     def __init__(self, window):
         self._w = window
         self._analyzer_worker: AnalyzerWorker | None = None
+        self._waveform_worker: WaveformWorker | None = None
 
     # ------------------------------------------------------------------
     # Video reference
@@ -32,6 +36,32 @@ class ProfileController:
         if path:
             self._w.selected_video_path = path
             self._w.lbl_selected_video.setText(os.path.basename(path))
+            self._start_waveform_preview(path)
+
+    def _start_waveform_preview(self, video_path: str):
+        self._w.lbl_waveform.setText(self._w.t("waveform_loading"))
+        self._w.lbl_waveform.setPixmap(QPixmap())
+        self._waveform_worker = WaveformWorker(video_path)
+        self._waveform_worker.sig_done.connect(self._on_waveform_ready)
+        self._waveform_worker.sig_error.connect(self._on_waveform_error)
+        self._waveform_worker.start()
+
+    def _on_waveform_ready(self, image_path: str):
+        pixmap = QPixmap(image_path)
+        if pixmap.isNull():
+            self._on_waveform_error("invalid")
+            return
+        scaled = pixmap.scaled(
+            self._w.lbl_waveform.size(),
+            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.TransformationMode.SmoothTransformation,
+        )
+        self._w.lbl_waveform.setPixmap(scaled)
+        self._w.lbl_waveform.setText("")
+
+    def _on_waveform_error(self, _error: str):
+        self._w.lbl_waveform.setPixmap(QPixmap())
+        self._w.lbl_waveform.setText(self._w.t("waveform_unavailable"))
 
     # ------------------------------------------------------------------
     # Analysis
@@ -46,7 +76,8 @@ class ProfileController:
         self._w.btn_apply_profile.setEnabled(False)
         self._w.lbl_analyzer_status.setText(self._w.t("profile_analyzing"))
 
-        self._analyzer_worker = AnalyzerWorker(self._w.selected_video_path)
+        hwaccel = self._w.gpu_hwaccel if self._w.gpu_accel_enabled else None
+        self._analyzer_worker = AnalyzerWorker(self._w.selected_video_path, hwaccel)
         self._analyzer_worker.sig_done.connect(self._on_done)
         self._analyzer_worker.sig_error.connect(self._on_error)
         self._analyzer_worker.start()
@@ -79,6 +110,8 @@ class ProfileController:
         if confirm == QMessageBox.StandardButton.Yes:
             self._w.config_manager.clear_audio_profile()
             self._w.lbl_selected_video.setText(self._w.t("profile_no_file"))
+            self._w.lbl_waveform.setPixmap(QPixmap())
+            self._w.lbl_waveform.setText(self._w.t("waveform_empty"))
             self.refresh_view()
 
     def apply_profile_from_analyzer(self):

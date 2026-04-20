@@ -170,6 +170,8 @@ class NormalizerController:
         target_vol = self._w.slider_volume.value()
         lra = self._w.slider_lra.value()
         tp = self._w.slider_tp.value() / 2.0
+        hwaccel = self._w.gpu_hwaccel if self._w.gpu_accel_enabled else None
+        parallel_jobs = self._w.spin_parallel_jobs.value()
 
         self._process_worker = ProcessWorker(
             selected,
@@ -179,6 +181,8 @@ class NormalizerController:
             tp,
             self._w.logger,
             self._w.current_language,
+            hwaccel,
+            parallel_jobs,
         )
         self._process_worker.sig_progress.connect(self._on_progress)
         self._process_worker.sig_status.connect(self._on_status)

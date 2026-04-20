@@ -10,12 +10,13 @@ class AnalyzerWorker(QThread):
     sig_done = pyqtSignal(dict)
     sig_error = pyqtSignal(str)
 
-    def __init__(self, video_path: str):
+    def __init__(self, video_path: str, hwaccel: str | None = None):
         super().__init__()
         self.video_path = video_path
+        self.hwaccel = hwaccel
 
     def run(self):
-        stats = analyze_reference_profile(self.video_path)
+        stats = analyze_reference_profile(self.video_path, self.hwaccel)
         if not stats:
             self.sig_error.emit("No se pudieron extraer parámetros del audio.")
             return

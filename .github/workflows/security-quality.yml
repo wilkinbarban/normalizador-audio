@@ -1,0 +1,54 @@
+name: Security & Quality
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      
+      - name: Run Bandit security check
+        continue-on-error: true
+        run: |
+          pip install bandit
+          bandit -r normalizador_app -f json -o bandit-report.json || true
+      
+      - name: Check for hardcoded secrets
+        continue-on-error: true
+        run: |
+          pip install detect-secrets
+          detect-secrets scan --baseline .secrets.baseline || true
+
+  quality:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install PyQt6>=6.0.0 pylint
+      
+      - name: Pylint analysis
+        continue-on-error: true
+        run: |
+          pylint normalizador_app --exit-zero --max-line-length=120 || true

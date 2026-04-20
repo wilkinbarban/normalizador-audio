@@ -1,0 +1,8 @@
+PyQt6>=6.0.0
+qrcode[pil]>=8.0.0
+requests>=2.31.0
+packaging>=24.0
+pytest>=9.0.0
+pytest-cov>=7.1.0
+bandit>=1.7.0
+pylint>=3.0.0

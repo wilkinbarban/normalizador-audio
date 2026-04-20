@@ -1,0 +1,38 @@
+name: Syntax Check
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      
+      - name: Check syntax with py_compile
+        run: |
+          python -m py_compile normalizador.py normalizador_app/**/*.py tests/**/*.py
+      
+      - name: Check imports
+        run: |
+          python -c "
+          import sys
+          import py_compile
+          import os
+          for root, dirs, files in os.walk('normalizador_app'):
+            for f in files:
+              if f.endswith('.py'):
+                path = os.path.join(root, f)
+                py_compile.compile(path, doraise=True)
+          print('✅ All files compile successfully')
+          "

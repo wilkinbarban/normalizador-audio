@@ -137,15 +137,25 @@ class MainWindow(QMainWindow):
         missing = [DependencyService.REQUIRED[name] for name, ok in deps.items() if not ok]
         missing_text = "\n".join(f"• {item}" for item in missing)
 
-        open_site = QMessageBox.question(
+        install_now = QMessageBox.question(
             self,
             self.t("deps_missing_title"),
             self.t("deps_missing_text", missing=missing_text),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
-        if open_site == QMessageBox.StandardButton.Yes:
-            import webbrowser
-            webbrowser.open("https://ffmpeg.org/download.html")
+
+        if install_now == QMessageBox.StandardButton.Yes:
+            QMessageBox.information(self, self.t("msg_info"), self.t("deps_installing_console"))
+            success, error = DependencyService.install_ffmpeg_via_winget(open_console=True)
+            if success:
+                QMessageBox.information(self, self.t("msg_success"), self.t("deps_install_ok"))
+                return True
+
+            QMessageBox.critical(
+                self,
+                self.t("msg_error"),
+                self.t("deps_install_fail", error=error or self.t("deps_install_fail_unknown")),
+            )
 
         QMessageBox.critical(self, self.t("msg_error"), self.t("cannot_start_without_ffmpeg"))
         return False
@@ -268,6 +278,10 @@ class MainWindow(QMainWindow):
             icons.icon("donate", style.standardIcon(QStyle.StandardPixmap.SP_DialogYesButton)),
             "Ayuda al proyecto", self._action_support_project,
         )
+        action_install_ffmpeg = help_menu.addAction(
+            icons.icon("download", style.standardIcon(QStyle.StandardPixmap.SP_ArrowDown)),
+            "Instalar FFmpeg", self._action_install_ffmpeg,
+        )
         action_updates = help_menu.addAction(
             icons.icon("refresh", style.standardIcon(QStyle.StandardPixmap.SP_BrowserReload)),
             "Verificar actualizaciones", self._action_check_updates,
@@ -310,7 +324,7 @@ class MainWindow(QMainWindow):
             "update_deps": action_update_deps, "check_deps": action_check_deps,
             "clean_cache": action_clean_cache, "restore": action_restore, "exit": action_exit,
             "logs": action_logs, "errors": action_errors, "settings": action_settings,
-            "theme": action_theme,
+            "ffmpeg": action_install_ffmpeg, "theme": action_theme,
             "manual": action_manual, "support": action_support,
             "updates": action_updates,
         }
@@ -727,6 +741,7 @@ class MainWindow(QMainWindow):
         self.menu_actions["logs"].setText(self.t("action_logs"))
         self.menu_actions["errors"].setText(self.t("action_errors"))
         self.menu_actions["settings"].setText(self.t("action_settings"))
+        self.menu_actions["ffmpeg"].setText(self.t("action_ffmpeg"))
         self.menu_actions["theme"].setText(self.t("action_theme"))
         self.menu_actions["manual"].setText(self.t("action_manual"))
         self.menu_actions["support"].setText(self.t("action_support_project"))
@@ -825,6 +840,35 @@ class MainWindow(QMainWindow):
             QMessageBox.information(self, self.t("deps_title"), self.t("deps_all_ok", info=info))
         else:
             QMessageBox.warning(self, self.t("deps_title"), self.t("deps_missing", info=info))
+
+    def _action_install_ffmpeg(self):
+        if DependencyService.check_ffmpeg():
+            QMessageBox.information(
+                self,
+                self.t("action_ffmpeg"),
+                self.t("ffmpeg_already_installed"),
+            )
+            return
+
+        confirm = QMessageBox.question(
+            self,
+            self.t("action_ffmpeg"),
+            self.t("deps_missing_text", missing=f"• {DependencyService.REQUIRED['ffmpeg']}"),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        )
+        if confirm != QMessageBox.StandardButton.Yes:
+            return
+
+        QMessageBox.information(self, self.t("msg_info"), self.t("deps_installing_console"))
+        success, error = DependencyService.install_ffmpeg_via_winget(open_console=True)
+        if success:
+            QMessageBox.information(self, self.t("msg_success"), self.t("deps_install_ok"))
+        else:
+            QMessageBox.critical(
+                self,
+                self.t("msg_error"),
+                self.t("deps_install_fail", error=error or self.t("deps_install_fail_unknown")),
+            )
 
     def _action_clean_cache(self):
         confirm = QMessageBox.question(

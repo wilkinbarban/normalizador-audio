@@ -200,7 +200,64 @@ if (-not $PythonCmd) {
 }
 
 # ---------------------------------------------------------------------------
-# 2. Create or validate virtual environment
+# 2. Locate FFmpeg runtime (required by the app)
+# ---------------------------------------------------------------------------
+Write-Host ""
+Write-Step "Checking FFmpeg runtime..."
+
+$FFmpegReady = $false
+
+try {
+    $null = & ffmpeg -version 2>&1
+    if ($LASTEXITCODE -eq 0) {
+        $FFmpegReady = $true
+        Write-Ok "FFmpeg found in PATH."
+    }
+} catch { }
+
+if (-not $FFmpegReady) {
+    Write-Info "FFmpeg not found. Attempting automatic install via winget..."
+    if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
+        Write-Fail "winget is not available. Install FFmpeg manually and ensure ffmpeg.exe is in PATH."
+        exit 1
+    }
+
+    & winget install --id Gyan.FFmpeg --exact --source winget --accept-source-agreements --accept-package-agreements
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warn "Primary FFmpeg package failed. Trying fallback package..."
+        & winget install --id FFmpeg.FFmpeg --exact --source winget --accept-source-agreements --accept-package-agreements
+    }
+
+    if ($LASTEXITCODE -ne 0) {
+        Write-Fail "winget FFmpeg installation failed. Please install FFmpeg manually."
+        exit 1
+    }
+
+    $env:PATH = [System.Environment]::GetEnvironmentVariable('PATH', 'Machine') + ';' +
+                [System.Environment]::GetEnvironmentVariable('PATH', 'User')
+
+    $WingetLinks = Join-Path $env:LOCALAPPDATA 'Microsoft\WinGet\Links'
+    if ((Test-Path $WingetLinks) -and -not (($env:PATH -split ';') -contains $WingetLinks)) {
+        $env:PATH = "$env:PATH;$WingetLinks"
+    }
+
+    try {
+        $null = & ffmpeg -version 2>&1
+        if ($LASTEXITCODE -eq 0) {
+            $FFmpegReady = $true
+            Write-Ok "FFmpeg installed and ready."
+        }
+    } catch { }
+
+    if (-not $FFmpegReady) {
+        Write-Warn "FFmpeg was installed but is not yet visible in this session."
+        Write-Info "Please close this window and run the script again."
+        exit 1
+    }
+}
+
+# ---------------------------------------------------------------------------
+# 3. Create or validate virtual environment
 # ---------------------------------------------------------------------------
 Write-Host ""
 Write-Step "Setting up virtual environment (.venv)..."
@@ -234,7 +291,7 @@ if (-not (Test-Path $VenvPython)) {
 }
 
 # ---------------------------------------------------------------------------
-# 3. Install / update dependencies
+# 4. Install / update dependencies
 # ---------------------------------------------------------------------------
 Write-Host ""
 Write-Step "Installing dependencies..."
@@ -248,7 +305,7 @@ if ($LASTEXITCODE -ne 0) {
 Write-Ok "All dependencies are up to date."
 
 # ---------------------------------------------------------------------------
-# 4. Launch application
+# 5. Launch application
 # ---------------------------------------------------------------------------
 Write-Host ""
 Write-Ok "Launching Normalizador Audio..."

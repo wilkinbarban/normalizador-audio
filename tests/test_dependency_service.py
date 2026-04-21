@@ -40,6 +40,15 @@ class TestCheckFFmpeg:
         
         assert result is False
 
+    @patch("normalizador_app.services.dependency_service.subprocess.run")
+    def test_check_ffmpeg_non_zero_exit(self, mock_run):
+        """Test FFmpeg check when command exits with failure code."""
+        mock_run.return_value = MagicMock(returncode=1)
+
+        result = DependencyService.check_ffmpeg()
+
+        assert result is False
+
 
 class TestCheckAll:
     """Tests for check_all() method."""
@@ -118,3 +127,59 @@ class TestInstallPyQt6:
         
         assert success is False
         assert "Network error" in error_msg
+
+
+class TestInstallFFmpegWinget:
+    """Tests for winget-based FFmpeg installation."""
+
+    @patch("normalizador_app.services.dependency_service.DependencyService.check_winget")
+    def test_install_ffmpeg_winget_not_available(self, mock_check_winget):
+        """Should fail fast when winget is unavailable."""
+        mock_check_winget.return_value = False
+
+        success, error_msg = DependencyService.install_ffmpeg_via_winget(open_console=False)
+
+        assert success is False
+        assert "winget" in error_msg.lower()
+
+    @patch("normalizador_app.services.dependency_service.DependencyService._refresh_windows_path")
+    @patch("normalizador_app.services.dependency_service.DependencyService.check_ffmpeg")
+    @patch("normalizador_app.services.dependency_service.DependencyService.check_winget")
+    @patch("normalizador_app.services.dependency_service.subprocess.run")
+    def test_install_ffmpeg_success(self, mock_run, mock_check_winget, mock_check_ffmpeg, mock_refresh_path):
+        """Should return success when winget install succeeds and ffmpeg becomes available."""
+        mock_check_winget.return_value = True
+        mock_check_ffmpeg.side_effect = [True]
+        mock_result = MagicMock()
+        mock_result.returncode = 0
+        mock_result.stderr = ""
+        mock_run.return_value = mock_result
+
+        success, error_msg = DependencyService.install_ffmpeg_via_winget(open_console=False)
+
+        assert success is True
+        assert error_msg == ""
+        mock_refresh_path.assert_called_once()
+
+    @patch("normalizador_app.services.dependency_service.DependencyService._refresh_windows_path")
+    @patch("normalizador_app.services.dependency_service.DependencyService.check_ffmpeg")
+    @patch("normalizador_app.services.dependency_service.DependencyService.check_winget")
+    @patch("normalizador_app.services.dependency_service.subprocess.run")
+    def test_install_ffmpeg_all_candidates_fail(self, mock_run, mock_check_winget, mock_check_ffmpeg, mock_refresh_path):
+        """Should fail when all winget package candidates fail."""
+        mock_check_winget.return_value = True
+        mock_check_ffmpeg.return_value = False
+
+        first = MagicMock()
+        first.returncode = 1
+        first.stderr = "primary failed"
+        second = MagicMock()
+        second.returncode = 1
+        second.stderr = "fallback failed"
+        mock_run.side_effect = [first, second]
+
+        success, error_msg = DependencyService.install_ffmpeg_via_winget(open_console=False)
+
+        assert success is False
+        assert "fallback failed" in error_msg
+        mock_refresh_path.assert_not_called()

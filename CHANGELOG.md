@@ -10,6 +10,27 @@
 
 Todos los cambios notables en este proyecto serán documentados en este archivo.
 
+### [1.1.1] - 2026-04-21
+
+#### ✨ Nuevas Funcionalidades
+
+**Instalación automatizada de FFmpeg**
+- **Validación en instaladores PowerShell**: `install.ps1` e `install_secure.ps1` ahora detectan si FFmpeg está en el sistema y lo instalan automáticamente mediante `winget` (paquete `Gyan.FFmpeg` con fallback a `FFmpeg.FFmpeg`), siguiendo el mismo patrón que la instalación de Python.
+- **Auto-instalación al iniciar la app**: si FFmpeg no se detecta al arrancar, la aplicación ofrece instalarlo automáticamente con winget desde una ventana de consola, sin redirigir al usuario a un sitio web.
+- **Menú Ayuda › Instalar FFmpeg**: nueva opción visible en el menú Ayuda que verifica si FFmpeg ya está instalado antes de actuar — si está presente muestra un mensaje informativo; si falta, inicia el instalador automático.
+
+**Documentación y manual**
+- **Manual integrado reescrito**: `manual_text_full` completamente renovado en los 3 idiomas con 10 secciones estructuradas, emojis e iconos, cubriendo todas las funcionalidades actuales incluyendo presets, waveform, GPU y gestión de FFmpeg.
+- **Guía rápida actualizada**: `manual_text` actualizado con los 6 pasos esenciales que incluyen presets, perfil de referencia y la opción de instalar FFmpeg.
+
+**Servicio de dependencias**
+- Nuevos métodos en `DependencyService`: `install_ffmpeg_via_winget()`, `check_winget()` y `_refresh_windows_path()`.
+- `check_ffmpeg()` ahora valida correctamente el código de retorno del proceso, no solo la ausencia de excepciones.
+
+#### 🛠️ Compatibilidad
+
+- Sin cambios incompatibles. No requiere actualización de configuración.
+
 ### [1.1.0] - 2026-04-20
 
 #### ✨ Nuevas Funcionalidades
@@ -101,6 +122,27 @@ Primera versión de lanzamiento. Todas las características core están implemen
 
 All notable changes to this project will be documented in this file.
 
+### [1.1.1] - 2026-04-21
+
+#### ✨ New Features
+
+**Automated FFmpeg management**
+- **Validation in PowerShell installers**: `install.ps1` and `install_secure.ps1` now detect whether FFmpeg is available and install it automatically via `winget` (`Gyan.FFmpeg` with fallback to `FFmpeg.FFmpeg`), mirroring the existing Python install pattern.
+- **Auto-install on app startup**: if FFmpeg is not found at launch, the app offers to install it automatically via winget in a console window — no browser redirect.
+- **Help › Install FFmpeg menu item**: new visible option in the Help menu that checks if FFmpeg is already installed before acting — shows an informational message if present, or launches the automatic installer if missing.
+
+**Documentation and manual**
+- **Built-in manual rewritten**: `manual_text_full` fully rewritten in all 3 languages with 10 structured sections, emojis and icons, covering all current features including presets, waveform, GPU and FFmpeg management.
+- **Quick guide updated**: `manual_text` updated with 6 essential steps including presets, reference profile, and the Install FFmpeg option.
+
+**Dependency service**
+- New methods on `DependencyService`: `install_ffmpeg_via_winget()`, `check_winget()`, and `_refresh_windows_path()`.
+- `check_ffmpeg()` now correctly validates the process return code, not just the absence of exceptions.
+
+#### 🛠️ Compatibility
+
+- No breaking changes. No configuration update required.
+
 ### [1.1.0] - 2026-04-20
 
 #### ✨ New Features
@@ -191,6 +233,27 @@ First release version. All core features are implemented and production-ready.
 ## Português (Brasil)
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
+
+### [1.1.1] - 2026-04-21
+
+#### ✨ Novas Funcionalidades
+
+**Gerenciamento automatizado de FFmpeg**
+- **Validação nos instaladores PowerShell**: `install.ps1` e `install_secure.ps1` agora verificam se o FFmpeg está disponível e o instalam automaticamente via `winget` (pacote `Gyan.FFmpeg` com fallback para `FFmpeg.FFmpeg`), seguindo o mesmo padrão da instalação do Python.
+- **Auto-instalação na inicialização do app**: se o FFmpeg não for detectado ao iniciar, o aplicativo oferece instalá-lo automaticamente via winget em uma janela de console — sem redirecionar o usuário para um site.
+- **Menu Ajuda › Instalar FFmpeg**: nova opção visível no menu Ajuda que verifica se o FFmpeg já está instalado antes de agir — exibe mensagem informativa se presente, ou inicia o instalador automático se ausente.
+
+**Documentação e manual**
+- **Manual integrado reescrito**: `manual_text_full` completamente renovado nos 3 idiomas com 10 seções estruturadas, emojis e ícones, cobrindo todas as funcionalidades atuais incluindo presets, waveform, GPU e gerenciamento de FFmpeg.
+- **Guia rápido atualizado**: `manual_text` atualizado com os 6 passos essenciais que incluem presets, perfil de referência e a opção de instalar o FFmpeg.
+
+**Serviço de dependências**
+- Novos métodos em `DependencyService`: `install_ffmpeg_via_winget()`, `check_winget()` e `_refresh_windows_path()`.
+- `check_ffmpeg()` agora valida corretamente o código de retorno do processo, não apenas a ausência de exceções.
+
+#### 🛠️ Compatibilidade
+
+- Sem mudanças incompatíveis. Nenhuma atualização de configuração necessária.
 
 ### [1.1.0] - 2026-04-20
 

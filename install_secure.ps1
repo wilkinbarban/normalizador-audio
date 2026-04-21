@@ -134,7 +134,63 @@ Remove-Item -Recurse -Force $TempExtract -ErrorAction SilentlyContinue
 Write-Ok "Files installed."
 
 # ---------------------------------------------------------------------------
-# 4. Delegate to local install.ps1
+# 4. Ensure FFmpeg is available (same automatic flow used by installer)
+# ---------------------------------------------------------------------------
+Write-Host ""
+Write-Step "Checking FFmpeg runtime..."
+
+$FFmpegReady = $false
+try {
+    $null = & ffmpeg -version 2>&1
+    if ($LASTEXITCODE -eq 0) {
+        $FFmpegReady = $true
+        Write-Ok "FFmpeg found in PATH."
+    }
+} catch { }
+
+if (-not $FFmpegReady) {
+    Write-Info "FFmpeg not found. Attempting automatic install via winget..."
+    if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
+        Write-Fail "winget is not available. Install FFmpeg manually and ensure ffmpeg.exe is in PATH."
+        exit 1
+    }
+
+    & winget install --id Gyan.FFmpeg --exact --source winget --accept-source-agreements --accept-package-agreements
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warn "Primary FFmpeg package failed. Trying fallback package..."
+        & winget install --id FFmpeg.FFmpeg --exact --source winget --accept-source-agreements --accept-package-agreements
+    }
+
+    if ($LASTEXITCODE -ne 0) {
+        Write-Fail "winget FFmpeg installation failed. Please install FFmpeg manually."
+        exit 1
+    }
+
+    $env:PATH = [System.Environment]::GetEnvironmentVariable('PATH', 'Machine') + ';' +
+                [System.Environment]::GetEnvironmentVariable('PATH', 'User')
+
+    $WingetLinks = Join-Path $env:LOCALAPPDATA 'Microsoft\WinGet\Links'
+    if ((Test-Path $WingetLinks) -and -not (($env:PATH -split ';') -contains $WingetLinks)) {
+        $env:PATH = "$env:PATH;$WingetLinks"
+    }
+
+    try {
+        $null = & ffmpeg -version 2>&1
+        if ($LASTEXITCODE -eq 0) {
+            $FFmpegReady = $true
+            Write-Ok "FFmpeg installed and ready."
+        }
+    } catch { }
+
+    if (-not $FFmpegReady) {
+        Write-Warn "FFmpeg was installed but is not yet visible in this session."
+        Write-Info "Please close this window and run the script again."
+        exit 1
+    }
+}
+
+# ---------------------------------------------------------------------------
+# 5. Delegate to local install.ps1
 # ---------------------------------------------------------------------------
 Write-Host ""
 Write-Step "Running installer from local copy..."

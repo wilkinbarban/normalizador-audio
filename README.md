@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="normalizador_app\assets\icon.png" alt="Normalizador Audio Logo" width="220" style="max-width: 42vw; border-radius: 20px; box-shadow: 0 10px 28px rgba(0,0,0,0.28);">
+</div>
+  
 # Normalizador Audio
 
 [License: GPL v3](https://www.gnu.org/licenses/gpl-3.0) [Python](https://www.python.org/downloads/release/python-3110/) [Platform](https://www.microsoft.com/windows) [CI](https://github.com/wilkinbarban/normalizador-audio/actions) Educational

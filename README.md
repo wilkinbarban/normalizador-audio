@@ -1,10 +1,16 @@
 <div align="center">
   <img src="normalizador_app\assets\icon.png" alt="Normalizador Audio Logo" width="220" style="max-width: 42vw; border-radius: 20px; box-shadow: 0 10px 28px rgba(0,0,0,0.28);">
+  <h1>Normalizador Audio</h1>
+  <p align="center">
+    <a href="https://www.gnu.org/licenses/gpl-3.0"><img alt="License: GPL v3" src="https://img.shields.io/badge/License-GPLv3-blue.svg"></a>
+    <a href="https://www.python.org/downloads/release/python-3110/"><img alt="Python 3.11" src="https://img.shields.io/badge/Python-3.11-green.svg"></a>
+    <a href="https://www.microsoft.com/windows"><img alt="Platform Windows 10/11" src="https://img.shields.io/badge/Platform-Windows%2010%2F11-lightgrey.svg"></a>
+    <a href="https://github.com/wilkinbarban/normalizador-audio/releases"><img alt="Releases" src="https://img.shields.io/github/v/release/wilkinbarban/normalizador-audio"></a>
+    <a href="#educational-disclaimer--aviso-educativo--aviso-educacional"><img alt="Purpose Educational" src="https://img.shields.io/badge/Purpose-Educational-orange.svg"></a>
+  </p>
 </div>
-  
-# Normalizador Audio
 
-[License: GPL v3](https://www.gnu.org/licenses/gpl-3.0) [Python](https://www.python.org/downloads/release/python-3110/) [Platform](https://www.microsoft.com/windows) [CI](https://github.com/wilkinbarban/normalizador-audio/actions) Educational
+---
 
 > ⚠️ EDUCATIONAL DISCLAIMER / AVISO EDUCATIVO / AVISO EDUCACIONAL
 >
@@ -13,6 +19,11 @@
 > El autor no promueve usos indebidos de herramientas multimedia ni el incumplimiento de términos de servicio de plataformas de terceros.
 >
 > O autor não incentiva uso indevido de ferramentas multimídia nem violação de termos de serviço de plataformas de terceiros.
+
+---
+
+[License: GPL v3](https://www.gnu.org/licenses/gpl-3.0) [Python](https://www.python.org/downloads/release/python-3110/) [Platform](https://www.microsoft.com/windows) [CI](https://github.com/wilkinbarban/normalizador-audio/actions) Educational
+
 
 ## Language / Idioma / Idioma
 

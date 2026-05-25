@@ -204,7 +204,7 @@ Si encuentras un bug:
 2. Adjunta logs si es relevante:
    ```bash
    # Ver logs:
-   cat normalizador_errors.log
+   type "%LOCALAPPDATA%\NormalizadorAudio\normalizador_errors.log"
    ```
 
 ## Preguntas o dudas

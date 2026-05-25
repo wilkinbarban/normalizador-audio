@@ -1,7 +1,10 @@
-VERSION = "1.1.0"
-CONFIG_FILE = "normalizador_config.ini"
-PROFILE_FILE = "audio_profile.json"
-_PROFILE_FILE_LEGACY = "audio_profile.pkl"
+from normalizador_app.core.paths import user_data_path
+
+VERSION = "1.1.2"
+CONFIG_FILE = user_data_path("normalizador_config.ini")
+PROFILE_FILE = user_data_path("audio_profile.json")
+_PROFILE_FILE_LEGACY = user_data_path("audio_profile.pkl")
+LOG_FILE = user_data_path("normalizador_errors.log")
 SUPPORTED_FORMATS = (".mp4", ".mkv", ".mov", ".avi", ".flv", ".webm")
 
 # Predefined normalization presets (LUFS, LRA, TP)
@@ -13,33 +16,43 @@ AUDIO_PRESETS = {
 }
 
 DARK_THEME = {
-    "bg": "#0d1117",
-    "card": "#161b22",
-    "frame": "#21262d",
-    "border": "#30363d",
-    "accent": "#a78bfa",
-    "accent_dim": "#8b5cf6",
-    "success": "#3fb950",
-    "warning": "#d29922",
-    "error": "#f85149",
+    "bg": "#0b0f12",
+    "card": "#111820",
+    "frame": "#17232c",
+    "control": "#0f171e",
+    "border": "#26343d",
+    "border_soft": "#1d2a32",
+    "accent": "#39d98a",
+    "accent_dim": "#1f9f63",
+    "accent_soft": "#143323",
+    "signal": "#4cc9f0",
+    "success": "#39d98a",
+    "warning": "#f5b84b",
+    "error": "#ff5c5c",
     "text": "#e6edf3",
-    "text_sec": "#8b949e",
-    "danger": "#da3633",
-    "tab_fg": "#0d1117",
+    "text_sec": "#9eabb4",
+    "text_muted": "#6f7d86",
+    "danger": "#c93434",
+    "tab_fg": "#06100b",
 }
 
 LIGHT_THEME = {
-    "bg": "#f6f8fa",
+    "bg": "#f3f6f4",
     "card": "#ffffff",
-    "frame": "#eaeef2",
-    "border": "#d0d7de",
-    "accent": "#0969da",
-    "accent_dim": "#0550ae",
-    "success": "#1a7f37",
+    "frame": "#e7eee9",
+    "control": "#f7faf8",
+    "border": "#cbd8d0",
+    "border_soft": "#dde7e1",
+    "accent": "#087f5b",
+    "accent_dim": "#056246",
+    "accent_soft": "#dff5eb",
+    "signal": "#0b7285",
+    "success": "#087f5b",
     "warning": "#9a6700",
-    "error": "#cf222e",
-    "text": "#1f2328",
-    "text_sec": "#656d76",
-    "danger": "#cf222e",
+    "error": "#c92a2a",
+    "text": "#17211b",
+    "text_sec": "#56645c",
+    "text_muted": "#7d8a83",
+    "danger": "#c92a2a",
     "tab_fg": "#ffffff",
 }

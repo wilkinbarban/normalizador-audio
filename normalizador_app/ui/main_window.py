@@ -20,6 +20,7 @@ from PyQt6.QtWidgets import (
     QMessageBox,
     QProgressBar,
     QPushButton,
+    QSizePolicy,
     QSlider,
     QSpinBox,
     QTabWidget,
@@ -38,6 +39,7 @@ from normalizador_app.core.constants import (
     CONFIG_FILE,
     PROFILE_FILE,
     _PROFILE_FILE_LEGACY,
+    LOG_FILE,
     SUPPORTED_FORMATS,
     VERSION,
 )
@@ -64,8 +66,8 @@ class MainWindow(QMainWindow):
         icon_path = Path(__file__).resolve().parents[1] / "assets" / "icon.ico"
         if icon_path.exists():
             self.setWindowIcon(QIcon(str(icon_path)))
-        self.resize(1000, 648)
-        self.setMinimumSize(720, 508)
+        self.resize(1040, 780)
+        self.setMinimumSize(820, 680)
 
         self.config_manager = ConfigManager(CONFIG_FILE, PROFILE_FILE)
         self.config_manager.load()
@@ -167,7 +169,7 @@ class MainWindow(QMainWindow):
     def apply_styles(self):
         palette = DARK_THEME if self.dark_mode else LIGHT_THEME
         self.setStyleSheet(build_stylesheet(self.dark_mode))
-        self.lbl_status.setStyleSheet(f"color: {palette['success']}; font-weight: bold;")
+        self.lbl_status.setStyleSheet(f"color: {palette['success']}; font-weight: 700;")
 
     # ------------------------------------------------------------------
     # UI construction  (layout only — no logic)
@@ -177,15 +179,15 @@ class MainWindow(QMainWindow):
         root = QWidget()
         self.setCentralWidget(root)
         root_layout = QVBoxLayout(root)
-        root_layout.setContentsMargins(8, 4, 8, 8)
-        root_layout.setSpacing(4)
+        root_layout.setContentsMargins(10, 8, 10, 10)
+        root_layout.setSpacing(8)
 
         # ── Header ──────────────────────────────────────────────────────
         header = QFrame()
         header.setObjectName("header")
         header_layout = QVBoxLayout(header)
-        header_layout.setContentsMargins(12, 6, 12, 8)
-        header_layout.setSpacing(1)
+        header_layout.setContentsMargins(14, 8, 14, 10)
+        header_layout.setSpacing(2)
 
         title_row = QHBoxLayout()
         title_row.setContentsMargins(0, 0, 0, 0)
@@ -199,7 +201,7 @@ class MainWindow(QMainWindow):
         title_row.addStretch()
         title_row.addWidget(badge)
 
-        subtitle = QLabel("Normalización LUFS profesional con FFmpeg")
+        subtitle = QLabel("Mesa de control LUFS para lotes con FFmpeg")
         subtitle.setObjectName("headerSub")
         self.lbl_header_title = title
         self.lbl_header_subtitle = subtitle
@@ -209,6 +211,7 @@ class MainWindow(QMainWindow):
 
         # ── Tabs ────────────────────────────────────────────────────────
         self.tabs = QTabWidget()
+        self.tabs.setDocumentMode(True)
         root_layout.addWidget(self.tabs)
 
         self._build_normalizer_tab()
@@ -333,14 +336,14 @@ class MainWindow(QMainWindow):
         tab = QWidget()
         self.tabs.addTab(tab, "Normalizar")
         layout = QVBoxLayout(tab)
-        layout.setContentsMargins(0, 6, 0, 0)
-        layout.setSpacing(6)
+        layout.setContentsMargins(0, 8, 0, 0)
+        layout.setSpacing(8)
 
         folders_card = QFrame()
         folders_card.setObjectName("card")
         folders_layout = QVBoxLayout(folders_card)
-        folders_layout.setContentsMargins(8, 6, 8, 6)
-        folders_layout.setSpacing(4)
+        folders_layout.setContentsMargins(10, 8, 10, 8)
+        folders_layout.setSpacing(6)
 
         row_buttons = QHBoxLayout()
         self.btn_input = QPushButton("Origen")
@@ -367,8 +370,8 @@ class MainWindow(QMainWindow):
         settings_card = QFrame()
         settings_card.setObjectName("card")
         settings_layout = QVBoxLayout(settings_card)
-        settings_layout.setContentsMargins(8, 6, 8, 6)
-        settings_layout.setSpacing(4)
+        settings_layout.setContentsMargins(10, 8, 10, 8)
+        settings_layout.setSpacing(6)
 
         # Presets row
         row_presets = QHBoxLayout()
@@ -464,6 +467,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.lbl_videos_hint)
 
         self.tree_videos = VideoDropTreeWidget()
+        self.tree_videos.setAlternatingRowColors(True)
         self.tree_videos.setColumnCount(4)
         self.tree_videos.setHeaderLabels(["✓", "Archivo", "Tamaño", "Estado"])
         self.tree_videos.setRootIsDecorated(False)
@@ -474,7 +478,9 @@ class MainWindow(QMainWindow):
         self.tree_videos.setColumnWidth(0, 36)
         self.tree_videos.setColumnWidth(2, 72)
         self.tree_videos.setColumnWidth(3, 110)
-        layout.addWidget(self.tree_videos)
+        self.tree_videos.setMinimumHeight(300)
+        self.tree_videos.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        layout.addWidget(self.tree_videos, 1)
 
         row_selection = QHBoxLayout()
         self.btn_select_all = QPushButton("Todo")
@@ -482,21 +488,22 @@ class MainWindow(QMainWindow):
         row_selection.addWidget(self.btn_select_all)
         row_selection.addWidget(self.btn_select_none)
         row_selection.addStretch()
-        layout.addLayout(row_selection)
+        layout.addLayout(row_selection, 0)
 
         self.lbl_progress_title = QLabel("Progreso")
+        self.lbl_progress_title.setObjectName("sectionTitle")
         layout.addWidget(self.lbl_progress_title)
         self.progress = QProgressBar()
         self.progress.setRange(0, 100)
         self.progress.setValue(0)
         self.progress.setTextVisible(False)
         self.progress.setFixedHeight(8)
-        layout.addWidget(self.progress)
+        layout.addWidget(self.progress, 0)
 
         self.lbl_progress = QLabel("0%")
         self.lbl_progress.setObjectName("accent")
         self.lbl_progress.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(self.lbl_progress)
+        layout.addWidget(self.lbl_progress, 0)
 
         row_actions = QHBoxLayout()
         self.btn_start = QPushButton("Iniciar")
@@ -510,7 +517,7 @@ class MainWindow(QMainWindow):
         row_actions.addWidget(self.btn_cancel)
         row_actions.addStretch()
         row_actions.addWidget(self.lbl_status)
-        layout.addLayout(row_actions)
+        layout.addLayout(row_actions, 0)
 
         if self.input_folder:
             self.lbl_input.setText(self.t("label_input_value", name=Path(self.input_folder).name))
@@ -521,8 +528,8 @@ class MainWindow(QMainWindow):
         tab = QWidget()
         self.tabs.addTab(tab, "Perfil")
         layout = QVBoxLayout(tab)
-        layout.setContentsMargins(0, 6, 0, 0)
-        layout.setSpacing(6)
+        layout.setContentsMargins(0, 8, 0, 0)
+        layout.setSpacing(8)
 
         self.lbl_profile_title = QLabel("Perfil de audio")
         self.lbl_profile_title.setObjectName("sectionTitle")
@@ -567,6 +574,7 @@ class MainWindow(QMainWindow):
         self.text_analyzer = QTextEdit()
         self.text_analyzer.setObjectName("monoText")
         self.text_analyzer.setReadOnly(True)
+        self.text_analyzer.setMinimumHeight(150)
         panel_layout.addWidget(self.text_analyzer)
         layout.addWidget(self.group_output)
 
@@ -585,14 +593,15 @@ class MainWindow(QMainWindow):
         tab = QWidget()
         self.tabs.addTab(tab, "Reporte")
         layout = QVBoxLayout(tab)
-        layout.setContentsMargins(0, 6, 0, 0)
-        layout.setSpacing(6)
+        layout.setContentsMargins(0, 8, 0, 0)
+        layout.setSpacing(8)
 
         self.lbl_report_title = QLabel("Antes / después")
         self.lbl_report_title.setObjectName("sectionTitle")
         layout.addWidget(self.lbl_report_title)
 
         self.tree_report = QTreeWidget()
+        self.tree_report.setAlternatingRowColors(True)
         self.tree_report.setColumnCount(8)
         self.tree_report.setHeaderLabels([
             "Archivo", "Antes (I)", "Antes (LRA)", "Antes (TP)",
@@ -878,14 +887,16 @@ class MainWindow(QMainWindow):
         if confirm != QMessageBox.StandardButton.Yes:
             return
         deleted = 0
+        failed: list[str] = []
         for pattern in ("*.log", "*.tmp"):
             for file in Path(".").glob(pattern):
-                if file.name != "normalizador_errors.log":
+                if file.resolve() != Path(LOG_FILE).resolve():
                     try:
                         file.unlink()
                         deleted += 1
-                    except Exception:
-                        pass
+                    except OSError as exc:
+                        failed.append(str(file))
+                        self.logger.warning("Could not delete cache file %s: %s", file, exc)
 
         qr_cache_dir = Path(tempfile.gettempdir()) / "normalizador_audio_qr_cache"
         waveform_cache_dir = Path(tempfile.gettempdir()) / "normalizador_audio_waveform_cache"
@@ -897,8 +908,9 @@ class MainWindow(QMainWindow):
                     if now - file.stat().st_mtime >= max_age_seconds:
                         file.unlink()
                         deleted += 1
-                except Exception:
-                    pass
+                except OSError as exc:
+                    failed.append(str(file))
+                    self.logger.warning("Could not delete QR cache file %s: %s", file, exc)
 
         if waveform_cache_dir.exists():
             for file in waveform_cache_dir.glob("*.png"):
@@ -906,10 +918,13 @@ class MainWindow(QMainWindow):
                     if now - file.stat().st_mtime >= max_age_seconds:
                         file.unlink()
                         deleted += 1
-                except Exception:
-                    pass
+                except OSError as exc:
+                    failed.append(str(file))
+                    self.logger.warning("Could not delete waveform cache file %s: %s", file, exc)
 
         QMessageBox.information(self, self.t("msg_success"), self.t("clean_cache_result", count=deleted))
+        if failed:
+            self.logger.info("Cache cleanup skipped %s locked or inaccessible file(s).", len(failed))
 
     def _action_restore_config(self):
         confirm = QMessageBox.question(
@@ -919,28 +934,39 @@ class MainWindow(QMainWindow):
         if confirm != QMessageBox.StandardButton.Yes:
             return
         for file_name in [CONFIG_FILE, PROFILE_FILE, _PROFILE_FILE_LEGACY]:
-            if os.path.exists(file_name):
-                os.remove(file_name)
+            path = Path(file_name)
+            if path.exists():
+                try:
+                    path.unlink()
+                except OSError as exc:
+                    self.logger.error("Could not remove config file %s: %s", path, exc)
+                    QMessageBox.critical(self, self.t("msg_error"), str(exc))
+                    return
         QMessageBox.information(self, self.t("msg_success"), self.t("restore_config_done"))
 
     def _action_show_logs(self):
         content = self.t("logs_empty")
-        if os.path.exists("normalizador_errors.log"):
+        if os.path.exists(LOG_FILE):
             try:
-                content = self._read_logs_file("normalizador_errors.log")
-            except Exception as error:
+                content = self._read_logs_file(LOG_FILE)
+            except OSError as error:
+                self.logger.error("Could not read log file: %s", error)
                 content = self.t("error_reading_logs", error=error)
         show_text_dialog(self, self.t("logs_title"), content, size=(680, 480), tr=self.t)
 
     def _action_show_error_report(self):
         errors = []
         ignored_tokens = ("Error mostrando logs:", "codec can't decode byte", "invalid continuation byte")
-        if os.path.exists("normalizador_errors.log"):
-            for line in self._read_logs_file("normalizador_errors.log").splitlines():
-                if "ERROR" in line or "Exception" in line:
-                    if all(t in line for t in ignored_tokens):
-                        continue
-                    errors.append(line.strip())
+        if os.path.exists(LOG_FILE):
+            try:
+                for line in self._read_logs_file(LOG_FILE).splitlines():
+                    if "ERROR" in line or "Exception" in line:
+                        if any(token in line for token in ignored_tokens):
+                            continue
+                        errors.append(line.strip())
+            except OSError as error:
+                self.logger.error("Could not build error report: %s", error)
+                errors.append(self.t("error_reading_logs", error=error))
 
         if errors:
             text = self.t(

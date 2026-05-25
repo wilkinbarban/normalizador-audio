@@ -6,7 +6,19 @@ Tests for normalizador_app.core.config_manager
 import pytest
 import json
 import os
+from pathlib import Path
+
+from normalizador_app.core.constants import CONFIG_FILE, LOG_FILE, PROFILE_FILE
 from normalizador_app.core.config_manager import ConfigManager
+
+
+def test_default_runtime_files_live_outside_project():
+    """Default config, profile, and log files should live in the user data dir."""
+    project_root = Path.cwd().resolve()
+
+    for runtime_file in (CONFIG_FILE, PROFILE_FILE, LOG_FILE):
+        runtime_path = Path(runtime_file).resolve()
+        assert project_root not in (runtime_path, *runtime_path.parents)
 
 
 class TestConfigManager:

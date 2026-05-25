@@ -51,16 +51,11 @@ htmlcov/
 
 # Logs
 *.log
-normalizador_errors.log
 
 # Temp files
 *.tmp
 *.pkl
 *.pyc
-
-# Local runtime/config data
-normalizador_config.ini
-audio_profile.json
 
 # PyInstaller analysis artifacts
 build/

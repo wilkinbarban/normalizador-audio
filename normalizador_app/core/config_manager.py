@@ -41,6 +41,7 @@ class ConfigManager:
         self.load_audio_profile()
 
     def save(self):
+        os.makedirs(os.path.dirname(self.config_file) or ".", exist_ok=True)
         with open(self.config_file, "w", encoding="utf-8") as file:
             self.config.write(file)
 
@@ -73,6 +74,7 @@ class ConfigManager:
 
     def save_audio_profile(self):
         if self.audio_profile:
+            os.makedirs(os.path.dirname(self.profile_file) or ".", exist_ok=True)
             with open(self.profile_file, "w", encoding="utf-8") as file:
                 json.dump(self.audio_profile, file, ensure_ascii=False, indent=2)
 

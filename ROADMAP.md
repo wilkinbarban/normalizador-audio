@@ -176,9 +176,9 @@ Para que v1.0.0 esté lista para publicación en GitHub:
   dist/
   *.pyc
   .env
-  normalizador_config.ini
-  audio_profile.json
-  normalizador_errors.log
+  %LOCALAPPDATA%\NormalizadorAudio\normalizador_config.ini
+  %LOCALAPPDATA%\NormalizadorAudio\audio_profile.json
+  %LOCALAPPDATA%\NormalizadorAudio\normalizador_errors.log
   .vscode/
   ```
 

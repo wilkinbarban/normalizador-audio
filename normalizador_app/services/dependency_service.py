@@ -6,8 +6,21 @@ from pathlib import Path
 
 class DependencyService:
     REQUIRED = {
+        "python": "Python runtime",
         "ffmpeg": "FFmpeg (Conversor de audio/video)",
     }
+
+    @staticmethod
+    def python_version() -> str:
+        return f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+
+    @staticmethod
+    def python_dependency_floor() -> str:
+        return f">={sys.version_info.major}.{sys.version_info.minor}"
+
+    @staticmethod
+    def check_python() -> bool:
+        return sys.version_info >= (sys.version_info.major, sys.version_info.minor)
 
     @staticmethod
     def check_ffmpeg() -> bool:
@@ -97,7 +110,7 @@ class DependencyService:
 
     @classmethod
     def check_all(cls) -> dict:
-        return {"ffmpeg": cls.check_ffmpeg()}
+        return {"python": cls.check_python(), "ffmpeg": cls.check_ffmpeg()}
 
     @staticmethod
     def install_pyqt6() -> tuple[bool, str]:

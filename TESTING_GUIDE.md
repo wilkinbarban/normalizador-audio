@@ -118,7 +118,7 @@ git push origin feature/mi-feature
 ```markdown
 # Shields.io badges
 [![Tests](https://img.shields.io/github/workflow/status/tu-usuario/normalizador-audio/Tests%20%26%20Coverage?label=tests)](https://github.com/tu-usuario/normalizador-audio/actions)
-[![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![Python](https://img.shields.io/badge/python-detected%2B-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 # Codecov (una vez que lo configures)

@@ -8,6 +8,30 @@ from unittest.mock import patch, MagicMock
 from normalizador_app.services.dependency_service import DependencyService
 
 
+class TestPythonRuntime:
+    """Tests for Python runtime dependency metadata."""
+
+    def test_python_version_uses_running_interpreter(self):
+        """Python version should describe the active interpreter."""
+        import sys
+
+        assert DependencyService.python_version() == (
+            f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+        )
+
+    def test_python_dependency_floor_uses_major_minor(self):
+        """Dependency floor should be derived from the active interpreter."""
+        import sys
+
+        assert DependencyService.python_dependency_floor() == (
+            f">={sys.version_info.major}.{sys.version_info.minor}"
+        )
+
+    def test_check_python(self):
+        """The active interpreter satisfies its own local dependency floor."""
+        assert DependencyService.check_python() is True
+
+
 class TestCheckFFmpeg:
     """Tests for check_ffmpeg() method."""
 
@@ -61,7 +85,9 @@ class TestCheckAll:
         result = DependencyService.check_all()
         
         assert isinstance(result, dict)
+        assert "python" in result
         assert "ffmpeg" in result
+        assert result["python"] is True
         assert result["ffmpeg"] is True
 
 

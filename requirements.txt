@@ -1,3 +1,7 @@
+# Python runtime policy:
+# The installers detect the Python version already installed on the system and
+# treat that major.minor version as the minimum runtime for the local setup.
+# Example: Python 3.14 installed => local dependency floor is Python >=3.14.
 PyQt6>=6.0.0
 qrcode[pil]>=8.0.0
 requests>=2.31.0

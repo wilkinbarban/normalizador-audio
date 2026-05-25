@@ -4,16 +4,21 @@
     Normalizador Audio - One-command installer and launcher for Windows.
 
 .DESCRIPTION
-    Validates the Python runtime (requires >=3.8, <3.14; prefers 3.11),
-    creates an isolated virtual environment, installs all dependencies,
-    and launches the application.
+    Uses a single installer for both local and remote execution. If project
+    files are not present next to this script, it downloads the repository,
+    installs it to a user-owned directory, and delegates to the local copy.
+
+    The installer detects the installed Python runtime and treats that
+    major.minor version as the local minimum dependency floor, creates an
+    isolated virtual environment, installs Python requirements, validates
+    FFmpeg, and launches the application.
 
     This script is intended for EDUCATIONAL USE ONLY.
 
 .EXAMPLE
     .\install.ps1
 
-    irm https://raw.githubusercontent.com/wilkinbarban/normalizador-audio/main/install_secure.ps1 | iex
+    irm https://raw.githubusercontent.com/wilkinbarban/normalizador-audio/main/install.ps1 | iex
 
 .NOTES
     Platform : Windows 10/11
@@ -25,7 +30,201 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-# Resolve a safe base path for all file operations.
+$Version = "1.1.0"
+
+$Host.UI.RawUI.WindowTitle = "Normalizador Audio - Instalando..."
+Clear-Host
+
+Write-Host ""
+Write-Host "  *** N O R M A L I Z A D O R   A U D I O ***" -ForegroundColor Green
+Write-Host "  ===========================================" -ForegroundColor DarkCyan
+Write-Host "   Instalador y Lanzador - Version $Version" -ForegroundColor Gray
+Write-Host "  ===========================================" -ForegroundColor DarkCyan
+Write-Host ""
+
+function Show-Step {
+    param([string]$Message)
+    Write-Host "  >> $Message..." -ForegroundColor Gray
+}
+
+function Show-Info {
+    param([string]$Message)
+    Write-Host "  [INFO] $Message" -ForegroundColor Cyan
+}
+
+function Show-Warn {
+    param([string]$Message)
+    Write-Host "  [!] $Message" -ForegroundColor Yellow
+}
+
+function Show-Ok {
+    param([string]$Message)
+    Write-Host "  [OK] $Message" -ForegroundColor Green
+}
+
+function Show-Error {
+    param(
+        [string]$Title,
+        [string]$Detail,
+        [string]$Action
+    )
+
+    Write-Host ""
+    Write-Host "  [ERROR] $Title" -ForegroundColor Red
+    Write-Host "  --------------------------------------------------------" -ForegroundColor Red
+    Write-Host "   Detalle : $Detail" -ForegroundColor Yellow
+    Write-Host "   Accion  : $Action" -ForegroundColor Cyan
+    Write-Host "  --------------------------------------------------------" -ForegroundColor Red
+    Write-Host ""
+    Read-Host "  Presione Enter para salir..."
+    exit 1
+}
+
+function Run-WithProgress {
+    param(
+        [string]$FileName,
+        [string]$Arguments,
+        [string]$Message
+    )
+
+    $pinfo = New-Object System.Diagnostics.ProcessStartInfo
+    $pinfo.FileName = $FileName
+    $pinfo.Arguments = $Arguments
+    $pinfo.RedirectStandardOutput = $true
+    $pinfo.RedirectStandardError = $true
+    $pinfo.UseShellExecute = $false
+    $pinfo.CreateNoWindow = $true
+
+    $process = New-Object System.Diagnostics.Process
+    $process.StartInfo = $pinfo
+    $process.EnableRaisingEvents = $true
+
+    $stdoutList = New-Object System.Collections.Generic.List[string]
+    $stderrList = New-Object System.Collections.Generic.List[string]
+
+    $outEvent = Register-ObjectEvent -InputObject $process -EventName "OutputDataReceived" -Action {
+        if ($EventArgs.Data) {
+            $Event.MessageData.Add($EventArgs.Data)
+            $script:LastRawLine = $EventArgs.Data
+        }
+    } -MessageData $stdoutList
+
+    $errEvent = Register-ObjectEvent -InputObject $process -EventName "ErrorDataReceived" -Action {
+        if ($EventArgs.Data) {
+            $Event.MessageData.Add($EventArgs.Data)
+        }
+    } -MessageData $stderrList
+
+    try {
+        $script:LastRawLine = ""
+        $process.Start() | Out-Null
+        $process.BeginOutputReadLine()
+        $process.BeginErrorReadLine()
+    } catch {
+        Unregister-Event -SourceIdentifier $outEvent.Name -ErrorAction SilentlyContinue
+        Unregister-Event -SourceIdentifier $errEvent.Name -ErrorAction SilentlyContinue
+        return @{ Success = $false; Error = $_.Exception.Message; ExitCode = -1 }
+    }
+
+    $spinner = @('|', '/', '-', '\')
+    $index = 0
+
+    while (-not $process.HasExited) {
+        $displayMessage = $Message
+        $lastLine = $script:LastRawLine
+
+        if ($lastLine) {
+            if ($lastLine -match 'Downloading\s+([a-zA-Z0-9_\-\.]+)') {
+                $displayMessage = "Descargando $($Matches[1])"
+            } elseif ($lastLine -match 'Installing collected packages:\s*(.*)') {
+                $displayMessage = "Instalando paquetes"
+            } elseif ($lastLine -match 'Requirement already satisfied:\s*([a-zA-Z0-9_\-\.\:\(\)\ ]+)') {
+                $matched = $Matches[1]
+                if ($matched -match '^([a-zA-Z0-9_\-]+)') {
+                    $displayMessage = "Verificando $($Matches[1])"
+                }
+            }
+        }
+
+        if ($displayMessage.Length -gt 50) {
+            $displayMessage = $displayMessage.Substring(0, 47) + "..."
+        }
+
+        Write-Host -NoNewline "`r  $($spinner[$index]) $displayMessage..." -ForegroundColor Cyan
+        Start-Sleep -Milliseconds 100
+        $index = ($index + 1) % $spinner.Count
+    }
+
+    Unregister-Event -SourceIdentifier $outEvent.Name -ErrorAction SilentlyContinue
+    Unregister-Event -SourceIdentifier $errEvent.Name -ErrorAction SilentlyContinue
+
+    $stdout = $stdoutList -join "`n"
+    $stderr = $stderrList -join "`n"
+    $exitCode = $process.ExitCode
+
+    Write-Host -NoNewline "`r                                                                              `r"
+
+    if ($exitCode -eq 0) {
+        Write-Host "  [OK] $Message [Completado]" -ForegroundColor Green
+        return @{ Success = $true; Stdout = $stdout; Stderr = $stderr; ExitCode = $exitCode }
+    }
+
+    Write-Host "  [FAIL] $Message [Fallo]" -ForegroundColor Red
+    return @{ Success = $false; Stdout = $stdout; Stderr = $stderr; ExitCode = $exitCode }
+}
+
+function Invoke-PythonCode {
+    param(
+        [string]$PythonCommand,
+        [string]$Code
+    )
+
+    $parts = $PythonCommand -split ' '
+    if ($parts.Count -gt 1) {
+        return & $parts[0] $parts[1] -c $Code 2>&1
+    }
+
+    return & $parts[0] -c $Code 2>&1
+}
+
+function Get-PythonMinorVersion {
+    param([string]$PythonCommand)
+
+    try {
+        $version = Invoke-PythonCode -PythonCommand $PythonCommand -Code "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')"
+        if ($LASTEXITCODE -eq 0 -and "$version" -match '^\d+\.\d+$') {
+            return "$version"
+        }
+    } catch { }
+
+    return $null
+}
+
+function Test-PythonMinimum {
+    param(
+        [string]$PythonPath,
+        [string]$MinimumVersion
+    )
+
+    try {
+        $null = & $PythonPath -c "import sys; minimum=tuple(map(int, '$MinimumVersion'.split('.'))); raise SystemExit(0 if sys.version_info[:2] >= minimum else 1)" 2>&1
+        return ($LASTEXITCODE -eq 0)
+    } catch {
+        return $false
+    }
+}
+
+function Refresh-CurrentPath {
+    $machinePath = [System.Environment]::GetEnvironmentVariable('PATH', 'Machine')
+    $userPath = [System.Environment]::GetEnvironmentVariable('PATH', 'User')
+    $env:PATH = "$machinePath;$userPath"
+
+    $wingetLinks = Join-Path $env:LOCALAPPDATA 'Microsoft\WinGet\Links'
+    if ((Test-Path $wingetLinks) -and -not (($env:PATH -split ';') -contains $wingetLinks)) {
+        $env:PATH = "$env:PATH;$wingetLinks"
+    }
+}
+
 $ScriptRootCandidates = @(
     $PSScriptRoot,
     $(if (-not [string]::IsNullOrWhiteSpace($PSCommandPath)) { Split-Path -Parent $PSCommandPath }),
@@ -41,31 +240,10 @@ foreach ($candidate in $ScriptRootCandidates) {
     }
 }
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-function Write-Step  { param([string]$Msg) Write-Host "[....] $Msg" -ForegroundColor Cyan }
-function Write-Ok    { param([string]$Msg) Write-Host "[ OK ] $Msg" -ForegroundColor Green }
-function Write-Warn  { param([string]$Msg) Write-Host "[WARN] $Msg" -ForegroundColor Yellow }
-function Write-Fail  { param([string]$Msg) Write-Host "[FAIL] $Msg" -ForegroundColor Red }
-function Write-Info  { param([string]$Msg) Write-Host "[INFO] $Msg" -ForegroundColor Gray }
-
 if ([string]::IsNullOrWhiteSpace($ScriptRoot)) {
-    Write-Fail "Unable to resolve a valid working directory for installation."
-    exit 1
+    Show-Error "Error de Directorio" "No se pudo determinar el directorio de trabajo." "Ejecute el instalador desde un directorio con permisos de lectura y escritura."
 }
 
-Write-Host ""
-Write-Host "=======================================================" -ForegroundColor Cyan
-Write-Host "  Normalizador Audio - Installer / Launcher (Windows)" -ForegroundColor Cyan
-Write-Host "  Educational project - GPL-3.0 License" -ForegroundColor Cyan
-Write-Host "=======================================================" -ForegroundColor Cyan
-Write-Host ""
-
-# ---------------------------------------------------------------------------
-# Bootstrap mode: if this script is executed outside the project root,
-# download/update the repository first and then delegate to local install.
-# ---------------------------------------------------------------------------
 $RequiredFiles = @('normalizador.py', 'requirements.txt')
 $IsProjectRoot = $true
 foreach ($file in $RequiredFiles) {
@@ -76,49 +254,55 @@ foreach ($file in $RequiredFiles) {
 }
 
 if (-not $IsProjectRoot) {
-    Write-Warn "Project files were not found next to install.ps1."
-    Write-Info "Switching to bootstrap mode: downloading repository from GitHub..."
+    Show-Warn "Archivos de proyecto no encontrados en el directorio actual."
+    Show-Info "Entrando a modo bootstrap remoto: descargando repositorio..."
 
-    $RepoOwner   = 'wilkinbarban'
-    $RepoName    = 'normalizador-audio'
-    $Branch      = 'main'
-    $ArchiveUrl  = "https://github.com/$RepoOwner/$RepoName/archive/refs/heads/$Branch.zip"
-    $DesktopDir  = [Environment]::GetFolderPath('Desktop')
+    $RepoOwner = 'wilkinbarban'
+    $RepoName = 'normalizador-audio'
+    $Branch = 'main'
+    $ArchiveUrl = "https://github.com/$RepoOwner/$RepoName/archive/refs/heads/$Branch.zip"
+    $DesktopDir = [Environment]::GetFolderPath('Desktop')
     if ([string]::IsNullOrWhiteSpace($DesktopDir)) {
         $DesktopDir = Join-Path $HOME 'Desktop'
     }
-    $InstallDir  = if ($env:NORM_INSTALL_DIR) { $env:NORM_INSTALL_DIR } else { Join-Path $DesktopDir $RepoName }
-    $TempZip     = Join-Path $env:TEMP "$RepoName-$Branch.zip"
+    $InstallDir = if ($env:NORM_INSTALL_DIR) { $env:NORM_INSTALL_DIR } else { Join-Path $DesktopDir $RepoName }
+    $TempZip = Join-Path $env:TEMP "$RepoName-$Branch.zip"
     $TempExtract = Join-Path $env:TEMP "$RepoName-bootstrap-$(Get-Random)"
 
-    Write-Step "Downloading repository archive..."
-    Invoke-WebRequest -Uri $ArchiveUrl -OutFile $TempZip -UseBasicParsing
+    $downloadArgs = "-NoProfile -Command `"Invoke-WebRequest -Uri '$ArchiveUrl' -OutFile '$TempZip' -UseBasicParsing`""
+    $downloadResult = Run-WithProgress "powershell" $downloadArgs "Descargando repositorio de GitHub"
+    if (-not $downloadResult.Success) {
+        Show-Error "Fallo de Descarga" "No se pudo descargar el repositorio desde GitHub." "Verifique su conexion a Internet y que github.com sea accesible."
+    }
 
     $zipSize = (Get-Item $TempZip).Length
     if ($zipSize -lt 1024) {
-        Write-Fail "Downloaded archive appears invalid (size: $zipSize bytes)."
         Remove-Item -Force $TempZip -ErrorAction SilentlyContinue
-        exit 1
+        Show-Error "Integridad Invalida" "El archivo descargado es invalido o corrupto (size: $zipSize bytes)." "Vuelva a intentar la ejecucion."
     }
 
-    Write-Step "Extracting repository archive..."
     $null = New-Item -ItemType Directory -Path $TempExtract -Force
-    Expand-Archive -Path $TempZip -DestinationPath $TempExtract -Force
+    $extractArgs = "-NoProfile -Command `"Expand-Archive -Path '$TempZip' -DestinationPath '$TempExtract' -Force`""
+    $extractResult = Run-WithProgress "powershell" $extractArgs "Extrayendo repositorio del instalador"
     Remove-Item -Force $TempZip -ErrorAction SilentlyContinue
+
+    if (-not $extractResult.Success) {
+        Remove-Item -Recurse -Force $TempExtract -ErrorAction SilentlyContinue
+        Show-Error "Extraccion Fallida" "No se pudo descomprimir el archivo del repositorio." "Asegurese de contar con espacio en disco y permisos de escritura."
+    }
 
     $ExtractedRoot = Join-Path $TempExtract "$RepoName-$Branch"
     if (-not (Test-Path $ExtractedRoot)) {
-        Write-Fail "Expected folder '$ExtractedRoot' not found after extraction."
         Remove-Item -Recurse -Force $TempExtract -ErrorAction SilentlyContinue
-        exit 1
+        Show-Error "Estructura Invalida" "La carpeta esperada tras la extraccion no existe." "Vuelva a intentar la ejecucion."
     }
 
-    Write-Step "Installing repository to: $InstallDir"
+    Show-Step "Instalando archivos del repositorio"
     if (Test-Path $InstallDir) {
-        Write-Warn "Target already exists. Updating in-place (existing .venv preserved)."
+        Show-Warn "Carpeta destino existente. Actualizando archivos en-lugar..."
         Get-ChildItem -Path $ExtractedRoot | Where-Object { $_.Name -ne '.venv' } | ForEach-Object {
-            $dest = Join-Path $InstallDir $_.Name
-            Copy-Item -Path $_.FullName -Destination $dest -Recurse -Force
+            $destination = Join-Path $InstallDir $_.Name
+            Copy-Item -Path $_.FullName -Destination $destination -Recurse -Force
         }
     } else {
         Move-Item -Path $ExtractedRoot -Destination $InstallDir
@@ -128,194 +312,170 @@ if (-not $IsProjectRoot) {
 
     $LocalInstaller = Join-Path $InstallDir 'install.ps1'
     if (-not (Test-Path $LocalInstaller)) {
-        Write-Fail "install.ps1 not found in $InstallDir after bootstrap."
-        exit 1
+        Show-Error "Script Faltante" "El script install.ps1 no se encontro en el directorio instalado." "Reporte este error al autor del proyecto."
     }
 
-    Write-Ok "Repository ready. Delegating to local installer..."
+    Show-Ok "Repositorio instalado con exito."
+    Show-Info "Delegando arranque al instalador local..."
     Set-Location $InstallDir
     & $LocalInstaller
     exit $LASTEXITCODE
 }
 
-# ---------------------------------------------------------------------------
-# 1. Locate a compatible Python runtime (>=3.8, <3.14; prefer 3.11)
-# ---------------------------------------------------------------------------
-Write-Step "Locating compatible Python runtime..."
+Show-Step "Verificando entorno de Python"
 
-$PythonCmd = $null
+$pythonCmd = $null
+$pythonMinimum = $null
+$pythonCandidates = @("python", "py", "py -3.14", "py -3.13", "py -3.12", "py -3.11", "py -3.10", "py -3.9", "py -3.8")
 
-try {
-    $null = & py -3.11 --version 2>&1
-    if ($LASTEXITCODE -eq 0) {
-        $PythonCmd = @('py', '-3.11')
-        Write-Ok "Python 3.11 found via py launcher."
+foreach ($candidate in $pythonCandidates) {
+    $detectedVersion = Get-PythonMinorVersion -PythonCommand $candidate
+    if ($detectedVersion) {
+        $pythonCmd = $candidate
+        $pythonMinimum = $detectedVersion
+        break
     }
-} catch { }
-
-if (-not $PythonCmd) {
-    try {
-        $null = & python --version 2>&1
-        if ($LASTEXITCODE -eq 0) {
-            $null = & python -c "import sys; raise SystemExit(0 if (3,8) <= sys.version_info < (3,14) else 1)" 2>&1
-            if ($LASTEXITCODE -eq 0) {
-                $PythonCmd = @('python')
-                Write-Ok "Compatible Python found in PATH."
-            } else {
-                Write-Warn "Python in PATH is outside the supported range (>=3.8, <3.14)."
-            }
-        }
-    } catch { }
 }
 
-if (-not $PythonCmd) {
-    Write-Info "No compatible Python found. Attempting automatic install via winget..."
+if (-not $pythonCmd) {
+    Show-Warn "Python no detectado en el sistema."
+
     if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
-        Write-Fail "winget is not available. Install Python 3.11 manually from https://www.python.org/downloads/"
-        Write-Fail "Make sure to check 'Add Python to PATH' during installation."
-        exit 1
-    }
-    & winget install --id Python.Python.3.11 --accept-source-agreements --accept-package-agreements
-    if ($LASTEXITCODE -ne 0) {
-        Write-Fail "winget installation failed. Please install Python 3.11 manually."
-        exit 1
+        Show-Error "Python No Encontrado" "No se encontro Python ni el instalador winget en el sistema." "Instale Python desde https://www.python.org/downloads/ marcando 'Add Python to PATH'."
     }
 
-    $env:PATH = [System.Environment]::GetEnvironmentVariable('PATH', 'Machine') + ';' +
-                [System.Environment]::GetEnvironmentVariable('PATH', 'User')
+    $installResult = Run-WithProgress "winget" "install --id Python.Python.3.14 --accept-source-agreements --accept-package-agreements" "Instalando Python"
+    if (-not $installResult.Success) {
+        Show-Error "Instalacion de Python Fallida" "Fallo al instalar Python mediante winget." "Instale Python manualmente desde https://www.python.org/downloads/ y vuelva a ejecutar install.ps1."
+    }
 
-    try {
-        $null = & py -3.11 --version 2>&1
-        if ($LASTEXITCODE -eq 0) {
-            $PythonCmd = @('py', '-3.11')
-            Write-Ok "Python 3.11 installed and ready."
+    Refresh-CurrentPath
+
+    foreach ($candidate in $pythonCandidates) {
+        $detectedVersion = Get-PythonMinorVersion -PythonCommand $candidate
+        if ($detectedVersion) {
+            $pythonCmd = $candidate
+            $pythonMinimum = $detectedVersion
+            break
         }
-    } catch { }
+    }
 
-    if (-not $PythonCmd) {
-        Write-Warn "Python was installed but is not yet visible in this session."
-        Write-Info "Please close this window and run the script again."
-        exit 1
+    if (-not $pythonCmd) {
+        Show-Error "Reinicio de Consola Requerido" "Python fue instalado, pero la terminal actual aun no reconoce el comando." "Cierre esta ventana, abra una nueva terminal y vuelva a ejecutar install.ps1."
     }
 }
 
-# ---------------------------------------------------------------------------
-# 2. Locate FFmpeg runtime (required by the app)
-# ---------------------------------------------------------------------------
-Write-Host ""
-Write-Step "Checking FFmpeg runtime..."
+Show-Ok "Python base detectado ($pythonCmd). Piso local: >=$pythonMinimum"
 
-$FFmpegReady = $false
-
+Show-Step "Comprobando FFmpeg"
+$ffmpegReady = $false
 try {
     $null = & ffmpeg -version 2>&1
     if ($LASTEXITCODE -eq 0) {
-        $FFmpegReady = $true
-        Write-Ok "FFmpeg found in PATH."
+        $ffmpegReady = $true
     }
 } catch { }
 
-if (-not $FFmpegReady) {
-    Write-Info "FFmpeg not found. Attempting automatic install via winget..."
+if (-not $ffmpegReady) {
+    Show-Warn "FFmpeg no detectado en PATH."
+
     if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
-        Write-Fail "winget is not available. Install FFmpeg manually and ensure ffmpeg.exe is in PATH."
-        exit 1
+        Show-Error "FFmpeg No Encontrado" "No se encontro FFmpeg ni el instalador winget en el sistema." "Instale FFmpeg manualmente y asegurese de que ffmpeg.exe este en PATH."
     }
 
-    & winget install --id Gyan.FFmpeg --exact --source winget --accept-source-agreements --accept-package-agreements
-    if ($LASTEXITCODE -ne 0) {
-        Write-Warn "Primary FFmpeg package failed. Trying fallback package..."
-        & winget install --id FFmpeg.FFmpeg --exact --source winget --accept-source-agreements --accept-package-agreements
+    $ffmpegResult = Run-WithProgress "winget" "install --id Gyan.FFmpeg --exact --source winget --accept-source-agreements --accept-package-agreements" "Instalando FFmpeg"
+    if (-not $ffmpegResult.Success) {
+        Show-Warn "Paquete principal de FFmpeg fallo. Probando paquete alternativo..."
+        $ffmpegResult = Run-WithProgress "winget" "install --id FFmpeg.FFmpeg --exact --source winget --accept-source-agreements --accept-package-agreements" "Instalando FFmpeg alternativo"
     }
 
-    if ($LASTEXITCODE -ne 0) {
-        Write-Fail "winget FFmpeg installation failed. Please install FFmpeg manually."
-        exit 1
+    if (-not $ffmpegResult.Success) {
+        Show-Error "Instalacion de FFmpeg Fallida" "winget no pudo instalar FFmpeg." "Instale FFmpeg manualmente y asegurese de que ffmpeg.exe este en PATH."
     }
 
-    $env:PATH = [System.Environment]::GetEnvironmentVariable('PATH', 'Machine') + ';' +
-                [System.Environment]::GetEnvironmentVariable('PATH', 'User')
-
-    $WingetLinks = Join-Path $env:LOCALAPPDATA 'Microsoft\WinGet\Links'
-    if ((Test-Path $WingetLinks) -and -not (($env:PATH -split ';') -contains $WingetLinks)) {
-        $env:PATH = "$env:PATH;$WingetLinks"
-    }
+    Refresh-CurrentPath
 
     try {
         $null = & ffmpeg -version 2>&1
         if ($LASTEXITCODE -eq 0) {
-            $FFmpegReady = $true
-            Write-Ok "FFmpeg installed and ready."
+            $ffmpegReady = $true
         }
     } catch { }
 
-    if (-not $FFmpegReady) {
-        Write-Warn "FFmpeg was installed but is not yet visible in this session."
-        Write-Info "Please close this window and run the script again."
-        exit 1
+    if (-not $ffmpegReady) {
+        Show-Error "Reinicio de Consola Requerido" "FFmpeg fue instalado, pero la terminal actual aun no lo detecta." "Cierre esta ventana, abra una nueva terminal y vuelva a ejecutar install.ps1."
     }
 }
 
-# ---------------------------------------------------------------------------
-# 3. Create or validate virtual environment
-# ---------------------------------------------------------------------------
-Write-Host ""
-Write-Step "Setting up virtual environment (.venv)..."
+Show-Ok "FFmpeg disponible"
 
-$VenvDir    = Join-Path $ScriptRoot '.venv'
-$VenvPython = Join-Path $VenvDir 'Scripts\python.exe'
-$VenvPip    = Join-Path $VenvDir 'Scripts\pip.exe'
+$venvDir = Join-Path $ScriptRoot '.venv'
+$venvPython = Join-Path $venvDir 'Scripts\python.exe'
+$venvPip = Join-Path $venvDir 'Scripts\pip.exe'
+$recreateVenv = $false
 
-if (Test-Path $VenvPython) {
-    $null = & $VenvPython -c "import sys; raise SystemExit(0 if (3,8) <= sys.version_info < (3,14) else 1)" 2>&1
-    if ($LASTEXITCODE -ne 0) {
-        Write-Warn "Existing .venv uses an incompatible Python version. Recreating..."
-        Remove-Item -Recurse -Force $VenvDir
+if (Test-Path $venvPython) {
+    if (-not (Test-PythonMinimum -PythonPath $venvPython -MinimumVersion $pythonMinimum)) {
+        $recreateVenv = $true
     }
 }
 
-if (-not (Test-Path $VenvPython)) {
-    Write-Info "Creating isolated virtual environment..."
-    if ($PythonCmd.Count -gt 1) {
-        & $PythonCmd[0] $PythonCmd[1] -m venv $VenvDir
-    } else {
-        & $PythonCmd[0] -m venv $VenvDir
+if ($recreateVenv) {
+    Show-Warn "Entorno virtual anterior a Python $pythonMinimum detectado. Recreando .venv..."
+    Remove-Item -Path $venvDir -Recurse -Force -ErrorAction SilentlyContinue
+}
+
+if (-not (Test-Path $venvPython)) {
+    $parts = $pythonCmd -split ' '
+    $cmd = $parts[0]
+    $venvArgs = if ($parts.Count -gt 1) { "$($parts[1]) -m venv `"$venvDir`"" } else { "-m venv `"$venvDir`"" }
+
+    $venvResult = Run-WithProgress $cmd $venvArgs "Creando entorno virtual (.venv)"
+    if (-not $venvResult.Success) {
+        Show-Error "Error de Entorno Virtual" "No se pudo crear la carpeta .venv." "Verifique permisos de escritura o ejecute manualmente: python -m venv .venv"
     }
-    if ($LASTEXITCODE -ne 0) {
-        Write-Fail "Failed to create virtual environment."
-        exit 1
-    }
-    Write-Ok "Virtual environment created."
 } else {
-    Write-Ok "Virtual environment already exists."
+    Show-Ok "Entorno virtual detectado (.venv)"
 }
 
-# ---------------------------------------------------------------------------
-# 4. Install / update dependencies
-# ---------------------------------------------------------------------------
-Write-Host ""
-Write-Step "Installing dependencies..."
+Show-Step "Instalando dependencias de Python"
+$env:PIP_USER = "no"
 
-& $VenvPython -m pip install --upgrade pip --quiet
-& $VenvPip install -r (Join-Path $ScriptRoot 'requirements.txt')
-if ($LASTEXITCODE -ne 0) {
-    Write-Fail "Dependency installation failed. Check the output above for details."
-    exit 1
+$pipUpgrade = Run-WithProgress $venvPython "-m pip install --no-input --upgrade pip" "Actualizando instalador pip"
+if (-not $pipUpgrade.Success) {
+    Show-Warn "No se pudo actualizar pip. Se intentara continuar con la version disponible."
 }
-Write-Ok "All dependencies are up to date."
 
-# ---------------------------------------------------------------------------
-# 5. Launch application
-# ---------------------------------------------------------------------------
+$requirementsPath = Join-Path $ScriptRoot 'requirements.txt'
+if (-not (Test-Path $requirementsPath)) {
+    Show-Error "requirements.txt Faltante" "No se encontro el archivo requirements.txt." "Verifique que la descarga del repositorio este completa."
+}
+
+$depsResult = Run-WithProgress $venvPip "install --no-input -r `"$requirementsPath`"" "Instalando dependencias de Python"
+if (-not $depsResult.Success) {
+    $logFile = Join-Path $venvDir 'install.log'
+    @(
+        "STDOUT:",
+        $depsResult.Stdout,
+        "",
+        "STDERR:",
+        $depsResult.Stderr
+    ) | Out-File -FilePath $logFile -Encoding utf8
+
+    Show-Error "Error en Dependencias" "Fallo al instalar paquetes desde requirements.txt." "Consulte el log: $logFile`nIntente manualmente: .venv\Scripts\pip.exe install -r requirements.txt"
+}
+
 Write-Host ""
-Write-Ok "Launching Normalizador Audio..."
+Write-Host "  >>> Iniciando Normalizador Audio..." -ForegroundColor Green
 Write-Host ""
 
-& $VenvPython (Join-Path $ScriptRoot 'normalizador.py')
-
-if ($LASTEXITCODE -ne 0) {
-    Write-Host ""
-    Write-Fail "Application exited unexpectedly (exit code $LASTEXITCODE)."
-    Write-Info "Check logs or output above for details."
-    exit $LASTEXITCODE
+try {
+    $entrypoint = Join-Path $ScriptRoot 'normalizador.py'
+    $proc = Start-Process -FilePath $venvPython -ArgumentList "`"$entrypoint`"" -NoNewWindow -PassThru -Wait
+    $exitCode = $proc.ExitCode
+    if ($exitCode -ne 0) {
+        Show-Error "Ejecucion Fallida" "La aplicacion finalizo con codigo de error $exitCode." "Revise la salida anterior o %LOCALAPPDATA%\NormalizadorAudio\normalizador_errors.log para mas detalles."
+    }
+} catch {
+    Show-Error "Fallo Critico al Iniciar" $_.Exception.Message "Compruebe que el entorno virtual no este danado y vuelva a ejecutar install.ps1."
 }

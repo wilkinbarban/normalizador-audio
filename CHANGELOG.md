@@ -10,12 +10,23 @@
 
 Todos los cambios notables en este proyecto serán documentados en este archivo.
 
+### [1.1.2] - 2026-05-25
+
+#### Instalacion
+
+- `install.ps1` ahora concentra el flujo completo: instalacion local, bootstrap remoto, validacion de Python/FFmpeg, creacion de `.venv`, instalacion de dependencias y lanzamiento de la app.
+- El instalador remoto separado fue retirado porque el modo remoto queda integrado en `install.ps1`.
+- `Iniciar.bat` se agrega como lanzador local para repositorios ya clonados o descargados.
+- El instalador batch anterior fue retirado porque su objetivo queda cubierto por `install.ps1` e `Iniciar.bat`.
+- La configuracion, perfiles y logs ahora se guardan en `%LOCALAPPDATA%\NormalizadorAudio\` en lugar de la carpeta del proyecto.
+- La documentacion recomienda `irm https://raw.githubusercontent.com/wilkinbarban/normalizador-audio/main/install.ps1 | iex` como unico comando remoto.
+
 ### [1.1.1] - 2026-04-21
 
 #### ✨ Nuevas Funcionalidades
 
 **Instalación automatizada de FFmpeg**
-- **Validación en instaladores PowerShell**: `install.ps1` e `install_secure.ps1` ahora detectan si FFmpeg está en el sistema y lo instalan automáticamente mediante `winget` (paquete `Gyan.FFmpeg` con fallback a `FFmpeg.FFmpeg`), siguiendo el mismo patrón que la instalación de Python.
+- **Validación en instalador PowerShell**: `install.ps1` detecta si FFmpeg está en el sistema y lo instala automáticamente mediante `winget` (paquete `Gyan.FFmpeg` con fallback a `FFmpeg.FFmpeg`), siguiendo el mismo patrón que la instalación de Python.
 - **Auto-instalación al iniciar la app**: si FFmpeg no se detecta al arrancar, la aplicación ofrece instalarlo automáticamente con winget desde una ventana de consola, sin redirigir al usuario a un sitio web.
 - **Menú Ayuda › Instalar FFmpeg**: nueva opción visible en el menú Ayuda que verifica si FFmpeg ya está instalado antes de actuar — si está presente muestra un mensaje informativo; si falta, inicia el instalador automático.
 
@@ -86,8 +97,8 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 - **Restauración de configuración**: Vuelve a valores por defecto con un clic
 
 **Instalación y Distribución**
-- **PowerShell installer**: `install.ps1` y `install_secure.ps1` para instalación remota
-- **Batch installer**: `install_dependencies.bat` con auto-detección de Python/FFmpeg
+- **PowerShell installer**: `install.ps1` para instalación local y remota
+- **Lanzador local**: `Iniciar.bat` prepara el entorno local con auto-detección de Python/FFmpeg
 - **Bootstrap remoto**: Descarga automática del repo si no existe localmente
 - **Ejecutable independiente**: `.exe` único (onefile) sin dependencias externas de Python
 - **Licencia GPL v3**: Código abierto y distribuible
@@ -127,7 +138,7 @@ All notable changes to this project will be documented in this file.
 #### ✨ New Features
 
 **Automated FFmpeg management**
-- **Validation in PowerShell installers**: `install.ps1` and `install_secure.ps1` now detect whether FFmpeg is available and install it automatically via `winget` (`Gyan.FFmpeg` with fallback to `FFmpeg.FFmpeg`), mirroring the existing Python install pattern.
+- **Validation in the PowerShell installer**: `install.ps1` detects whether FFmpeg is available and installs it automatically via `winget` (`Gyan.FFmpeg` with fallback to `FFmpeg.FFmpeg`), mirroring the existing Python install pattern.
 - **Auto-install on app startup**: if FFmpeg is not found at launch, the app offers to install it automatically via winget in a console window — no browser redirect.
 - **Help › Install FFmpeg menu item**: new visible option in the Help menu that checks if FFmpeg is already installed before acting — shows an informational message if present, or launches the automatic installer if missing.
 
@@ -198,8 +209,8 @@ All notable changes to this project will be documented in this file.
 - **Configuration restore**: Reset to defaults in one click
 
 **Installation and Distribution**
-- **PowerShell installer**: `install.ps1` and `install_secure.ps1` for remote installation
-- **Batch installer**: `install_dependencies.bat` with Python/FFmpeg auto-detection
+- **PowerShell installer**: `install.ps1` for local and remote installation
+- **Local launcher**: `Iniciar.bat` prepares the local environment with Python/FFmpeg auto-detection
 - **Remote bootstrap**: Auto-downloads the repo if not present locally
 - **Standalone executable**: Single onefile `.exe` with no external Python dependencies
 - **GPL v3 license**: Open source and freely distributable
@@ -239,7 +250,7 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 #### ✨ Novas Funcionalidades
 
 **Gerenciamento automatizado de FFmpeg**
-- **Validação nos instaladores PowerShell**: `install.ps1` e `install_secure.ps1` agora verificam se o FFmpeg está disponível e o instalam automaticamente via `winget` (pacote `Gyan.FFmpeg` com fallback para `FFmpeg.FFmpeg`), seguindo o mesmo padrão da instalação do Python.
+- **Validação no instalador PowerShell**: `install.ps1` verifica se o FFmpeg está disponível e o instala automaticamente via `winget` (pacote `Gyan.FFmpeg` com fallback para `FFmpeg.FFmpeg`), seguindo o mesmo padrão da instalação do Python.
 - **Auto-instalação na inicialização do app**: se o FFmpeg não for detectado ao iniciar, o aplicativo oferece instalá-lo automaticamente via winget em uma janela de console — sem redirecionar o usuário para um site.
 - **Menu Ajuda › Instalar FFmpeg**: nova opção visível no menu Ajuda que verifica se o FFmpeg já está instalado antes de agir — exibe mensagem informativa se presente, ou inicia o instalador automático se ausente.
 
@@ -310,8 +321,8 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 - **Restauração de configuração**: Redefinir padrões com um clique
 
 **Instalação e Distribuição**
-- **Instalador PowerShell**: `install.ps1` e `install_secure.ps1` para instalação remota
-- **Instalador Batch**: `install_dependencies.bat` com auto-detecção de Python/FFmpeg
+- **Instalador PowerShell**: `install.ps1` para instalação local e remota
+- **Inicializador local**: `Iniciar.bat` prepara o ambiente local com auto-detecção de Python/FFmpeg
 - **Bootstrap remoto**: Download automático do repositório se não existir localmente
 - **Executável independente**: `.exe` único (onefile) sem dependências externas de Python
 - **Licença GPL v3**: Código aberto e distribuível livremente
